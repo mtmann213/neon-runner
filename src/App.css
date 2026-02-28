@@ -181,44 +181,79 @@ body {
 }
 
 /* 3D N64 Style Logo */
-.n64-logo {
-  width: 100px;
-  height: 100px;
-  perspective: 600px;
-}
-
-.n64-cube {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
-  animation: spin 3s infinite linear;
-}
-
-@keyframes spin {
-  from { transform: rotateY(0) rotateX(20deg); }
-  to { transform: rotateY(360deg) rotateX(20deg); }
-}
-
-.face {
-  position: absolute;
-  width: 100px;
-  height: 100px;
+.n64-container {
+  width: 200px;
+  height: 200px;
+  perspective: 1000px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 80px;
-  font-weight: 900;
-  font-family: serif;
-  border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.face.front  { transform: translateZ(50px); background: #3498db; color: #2980b9; }
-.face.back   { transform: rotateY(180deg) translateZ(50px); background: #e74c3c; color: #c0392b; }
-.face.right  { transform: rotateY(90deg) translateZ(50px); background: #2ecc71; color: #27ae60; }
-.face.left   { transform: rotateY(-90deg) translateZ(50px); background: #f1c40f; color: #f39c12; }
-.face.top    { transform: rotateX(90deg) translateZ(50px); background: #333; }
-.face.bottom { transform: rotateX(-90deg) translateZ(50px); background: #333; }
+.n64-logo-3d {
+  width: 100px;
+  height: 100px;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: n64-spin 4s infinite linear;
+}
+
+@keyframes n64-spin {
+  from { transform: rotateY(0) rotateX(-20deg); }
+  to { transform: rotateY(360deg) rotateX(-20deg); }
+}
+
+.n-bar {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+.f {
+  position: absolute;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+/* Colors based on official logo */
+.f.front, .f.back { background: #3498db; } /* Blue */
+.f.side-left { background: #2ecc71; }      /* Green */
+.f.side-right { background: #f1c40f; }     /* Yellow */
+.f.top, .f.bottom { background: #e74c3c; } /* Red */
+
+/* Vertical Bars */
+.left-bar, .right-bar {
+  width: 30px;
+  height: 100px;
+}
+
+.left-bar { transform: translate3d(-40px, 0, 0); }
+.right-bar { transform: translate3d(40px, 0, 0); }
+
+/* Diagonal Bar */
+.diagonal-bar {
+  width: 30px;
+  height: 110px;
+  transform: translate3d(0, -5px, 0) rotateZ(-38deg);
+}
+
+/* Shared Face Sizes for Bars */
+.n-bar .f.front, .n-bar .f.back { width: 30px; height: 100px; }
+.n-bar .f.side-left, .n-bar .f.side-right { width: 30px; height: 100px; }
+.n-bar .f.top, .n-bar .f.bottom { width: 30px; height: 30px; }
+
+/* Diagonal special size */
+.diagonal-bar .f.front, .diagonal-bar .f.back { height: 110px; }
+.diagonal-bar .f.side-left, .diagonal-bar .f.side-right { height: 110px; }
+
+/* Face Positioning */
+.f.front { transform: rotateY(0deg) translateZ(15px); }
+.f.back  { transform: rotateY(180deg) translateZ(15px); }
+.f.side-left { transform: rotateY(-90deg) translateZ(15px); }
+.f.side-right { transform: rotateY(90deg) translateZ(15px); }
+.f.top { transform: rotateX(90deg) translateZ(15px); }
+.f.bottom { transform: rotateX(-90deg) translateZ(85px); }
+
+/* Fix bottom for diagonal */
+.diagonal-bar .f.bottom { transform: rotateX(-90deg) translateZ(95px); }
 
 .gameclear { border-color: #f1c40f; }
 .gameclear h1 { color: #f1c40f; text-shadow: 0 0 20px #f1c40f; }

@@ -374,17 +374,29 @@ const GameCanvas: React.FC = () => {
 
       {isLoading && (
           <div className="loading-overlay">
-              <div className="n64-logo">
-                  <div className="n64-cube">
-                      <div className="face front">N</div>
-                      <div className="face back">N</div>
-                      <div className="face right">N</div>
-                      <div className="face left">N</div>
-                      <div className="face top"></div>
-                      <div className="face bottom"></div>
+              <div className="n64-container">
+                  <div className="n64-logo-3d">
+                      {/* Left Pillar */}
+                      <div className="n-bar left-bar">
+                          <div className="f top"></div><div className="f bottom"></div>
+                          <div className="f front"></div><div className="f back"></div>
+                          <div className="f side-left"></div><div className="f side-right"></div>
+                      </div>
+                      {/* Right Pillar */}
+                      <div className="n-bar right-bar">
+                          <div className="f top"></div><div className="f bottom"></div>
+                          <div className="f front"></div><div className="f back"></div>
+                          <div className="f side-left"></div><div className="f side-right"></div>
+                      </div>
+                      {/* Diagonal Bar */}
+                      <div className="n-bar diagonal-bar">
+                          <div className="f top"></div><div className="f bottom"></div>
+                          <div className="f front"></div><div className="f back"></div>
+                          <div className="f side-left"></div><div className="f side-right"></div>
+                      </div>
                   </div>
               </div>
-              <div className="loading-text">LOADING...</div>
+              <div className="loading-text">POWERING UP...</div>
           </div>
       )}
 
