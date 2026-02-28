@@ -82,7 +82,7 @@ const GameCanvas: React.FC = () => {
       x: 50, y: 100, width: 40, height: 60, vx: 0, vy: 0,
       isGrounded: false, isRolling: false, rollTimer: 0,
       invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
-      facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0
+      facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0, canDoubleJump: true
     };
 
     const keys: { [key: string]: boolean } = {};

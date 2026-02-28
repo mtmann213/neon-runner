@@ -57,20 +57,37 @@ export const updatePlayer = (
         player.vx = 0;
         if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed;
         if (keys['ArrowRight']) player.vx = effectiveMoveSpeed;
+// Jump Logic
+if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
+if (player.isGrounded) {
+    player.coyoteTimer = 6;
+    player.canDoubleJump = true;
+} else if (player.coyoteTimer > 0) {
+    player.coyoteTimer--;
+}
 
-        if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
-        if (player.isGrounded) player.coyoteTimer = 6;
-        else if (player.coyoteTimer > 0) player.coyoteTimer--;
-
-        if (player.jumpBufferTimer > 0 && player.coyoteTimer > 0) {
-            player.vy = effectiveJumpStrength;
-            player.isGrounded = false;
-            player.coyoteTimer = 0;
-            player.jumpBufferTimer = 0;
-            createParticles(player.x + player.width/2, player.y + currentHeight, '#7d5c34', 8, 2);
-            if (audioEnabled) audioManager.playJump();
-        }
+if (player.jumpBufferTimer > 0) {
+    // Grounded Jump (or Coyote)
+    if (player.coyoteTimer > 0) {
+        player.vy = effectiveJumpStrength;
+        player.isGrounded = false;
+        player.coyoteTimer = 0;
+        player.jumpBufferTimer = 0;
+        createParticles(player.x + player.width/2, player.y + currentHeight, '#7d5c34', 8, 2);
+        if (audioEnabled) audioManager.playJump();
+    } 
+    // Mid-air Double Jump
+    else if (player.canDoubleJump) {
+        player.vy = effectiveJumpStrength * 0.9; // Slightly weaker double jump
+        player.canDoubleJump = false;
+        player.jumpBufferTimer = 0;
+        // Unique particles for double jump (Cyan/Blue)
+        createParticles(player.x + player.width/2, player.y + currentHeight, '#00ffff', 12, 3);
+        if (audioEnabled) audioManager.playJump();
     }
+}
+}
+
 
     player.vy += gravity;
 
