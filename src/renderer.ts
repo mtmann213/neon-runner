@@ -15,43 +15,55 @@ export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, s
     ctx.restore();
 };
 
-export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: number) => {
+export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: number, isSwimming: boolean = false) => {
     const walkCycle = Math.sin(frameCount * 0.2) * 10;
+    const swimCycle = Math.sin(frameCount * 0.1) * 15;
     ctx.save();
     if (!p.facingRight) { ctx.translate(p.x + p.width, p.y); ctx.scale(-1, 1); } else { ctx.translate(p.x, p.y); }
     
     ctx.shadowBlur = p.giantTimer > 0 ? 40 : 15;
     ctx.shadowColor = p.giantTimer > 0 ? '#f1c40f' : (p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1'));
-if (p.invincibilityFrames % 10 < 5) {
-    if (p.isRolling) {
-        ctx.fillStyle = '#f1c40f'; 
-        ctx.beginPath(); 
-        ctx.arc(p.width/2, p.height/2, p.width/2, 0, Math.PI * 2); 
-        ctx.fill();
-    } else if (p.isWallSliding) {
-        // Wall slide pose
-        ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
-        ctx.fillRect(p.width*0.1, p.height*0.2, p.width*0.6, p.height*0.6);
-        ctx.fillStyle = '#f3e5ab';
-        ctx.fillRect(p.width*0.2, p.height*0.05, p.width*0.4, p.height*0.2);
-        // Limb pressed against wall
-        ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(p.width*0.7, p.height*0.3); ctx.lineTo(p.width*0.9, p.height*0.2); ctx.stroke();
-    } else {
-        // Body
 
+    if (p.invincibilityFrames % 10 < 5) {
+        if (p.isRolling) {
+            ctx.fillStyle = '#f1c40f'; 
+            ctx.beginPath(); 
+            ctx.arc(p.width/2, p.height/2, p.width/2, 0, Math.PI * 2); 
+            ctx.fill();
+        } else if (p.isWallSliding) {
+            ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
+            ctx.fillRect(p.width*0.1, p.height*0.2, p.width*0.6, p.height*0.6);
+            ctx.fillStyle = '#f3e5ab';
+            ctx.fillRect(p.width*0.2, p.height*0.05, p.width*0.4, p.height*0.2);
+            ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(p.width*0.7, p.height*0.3); ctx.lineTo(p.width*0.9, p.height*0.2); ctx.stroke();
+        } else {
+            // Body
             if (p.giantTimer > 0) {
                 ctx.fillStyle = `hsl(${frameCount * 5 % 360}, 70%, 50%)`;
             } else {
                 ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
             }
             ctx.fillRect(p.width*0.25, p.height*0.33, p.width*0.5, p.height*0.5);
+            
+            // Swimming Arms
+            if (isSwimming) {
+                ctx.strokeStyle = '#f3e5ab'; ctx.lineWidth = p.width * 0.15;
+                ctx.beginPath(); ctx.moveTo(p.width*0.25, p.height*0.4); 
+                ctx.lineTo(p.width*0.05, p.height*0.4 + swimCycle); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(p.width*0.75, p.height*0.4); 
+                ctx.lineTo(p.width*0.95, p.height*0.4 - swimCycle); ctx.stroke();
+            }
+
+            // Head
             ctx.fillStyle = '#f3e5ab';
             ctx.fillRect(p.width*0.3, p.height*0.08, p.width*0.4, p.height*0.26);
             ctx.fillStyle = 'black';
             ctx.fillRect(p.width*0.55, p.height*0.15, p.width*0.075, p.width*0.075);
+            
+            // Legs
             ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = p.width * 0.1;
-            const legOff = Math.abs(p.vx) > 0 ? walkCycle : 0;
+            const legOff = Math.abs(p.vx) > 0 ? (isSwimming ? swimCycle : walkCycle) : 0;
             ctx.beginPath(); ctx.moveTo(p.width*0.375, p.height*0.83); ctx.lineTo(p.width*0.375 + legOff, p.height); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(p.width*0.625, p.height*0.83); ctx.lineTo(p.width*0.625 - legOff, p.height); ctx.stroke();
         }
@@ -64,7 +76,6 @@ export const drawEnemy = (ctx: CanvasRenderingContext2D, e: Enemy, frameCount: n
     ctx.save(); ctx.translate(e.x, e.y);
     ctx.shadowBlur = 10;
     ctx.shadowColor = e.color || '#ff00ff';
-
     if (e.type === 'spikes') {
         ctx.fillStyle = e.color || '#2c3e50';
         for (let i = 0; i < e.w / 20; i++) {
@@ -81,11 +92,11 @@ export const drawEnemy = (ctx: CanvasRenderingContext2D, e: Enemy, frameCount: n
                 ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, -20, e.w * (e.hp / e.maxHp), 10);
             }
         } else if (e.type === 'flying') {
-            ctx.fillStyle = 'white'; ctx.fillRect(5, 5, 30, 15); // Wings
-            ctx.fillStyle = 'black'; ctx.fillRect(15, 10, 10, 10); // Eye
+            ctx.fillStyle = 'white'; ctx.fillRect(5, 5, 30, 15);
+            ctx.fillStyle = 'black'; ctx.fillRect(15, 10, 10, 10);
         } else if (e.type === 'turret') {
-            ctx.fillStyle = '#333'; ctx.fillRect(0, 20, 40, 20); // Base
-            ctx.fillStyle = '#ff0000'; ctx.fillRect(10, 0, 20, 20); // Head
+            ctx.fillStyle = '#333'; ctx.fillRect(0, 20, 40, 20);
+            ctx.fillStyle = '#ff0000'; ctx.fillRect(10, 0, 20, 20);
         } else {
             ctx.fillStyle = 'white'; ctx.fillRect(5, 10, 12, 12); ctx.fillRect(23, 10, 12, 12);
             ctx.fillStyle = 'black'; ctx.fillRect(10, 15, 4, 4); ctx.fillRect(28, 15, 4, 4);
@@ -113,40 +124,21 @@ export const drawBackground = (
             for (let i = -1; i < (canvas.width / 400) + 1; i++) {
                 const x = i * 400 + xOffset;
                 const h = layer.height;
-                ctx.beginPath();
-                ctx.moveTo(x, groundY);
-                ctx.lineTo(x + 200, groundY - h);
-                ctx.lineTo(x + 400, groundY);
-                ctx.fill();
+                ctx.beginPath(); ctx.moveTo(x, groundY); ctx.lineTo(x + 200, groundY - h); ctx.lineTo(x + 400, groundY); ctx.fill();
             }
         });
     }
-
-    // --- WATER RENDERING ---
     if (waterLevel !== undefined) {
         ctx.save();
-        ctx.fillStyle = 'rgba(0, 119, 190, 0.4)'; // Semi-transparent blue
+        ctx.fillStyle = 'rgba(0, 119, 190, 0.4)';
         ctx.fillRect(0, waterLevel, canvas.width, canvas.height - waterLevel);
-        
-        // Water Surface Line
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#00ffff';
-        ctx.strokeStyle = '#00ffff';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(0, waterLevel);
-        ctx.lineTo(canvas.width, waterLevel);
-        ctx.stroke();
-
-        // Procedural Bubbles
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = 15; ctx.shadowColor = '#00ffff'; ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(0, waterLevel); ctx.lineTo(canvas.width, waterLevel); ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; ctx.shadowBlur = 0;
         for (let i = 0; i < 20; i++) {
             const bx = (Math.sin(Date.now() * 0.001 + i) * 100 + i * 100) % canvas.width;
             const by = (waterLevel + 50 + i * 30 + Math.cos(Date.now() * 0.002 + i) * 50) % (canvas.height - waterLevel) + waterLevel;
-            ctx.beginPath();
-            ctx.arc(bx, by, 2 + (i % 4), 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(bx, by, 2 + (i % 4), 0, Math.PI * 2); ctx.fill();
         }
         ctx.restore();
     }
@@ -155,33 +147,23 @@ export const drawBackground = (
 export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
     prizes.forEach(p => {
         if (p.collected) return;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#f1c40f';
+        ctx.save(); ctx.translate(p.x, p.y); ctx.shadowBlur = 15; ctx.shadowColor = '#f1c40f';
         if (p.type === 'bacon') {
             ctx.fillStyle = '#ff9999'; ctx.fillRect(0, 5, 30, 10);
             ctx.fillStyle = '#ff0000'; ctx.fillRect(0, 15, 30, 5);
             ctx.fillStyle = '#ff9999'; ctx.fillRect(0, 20, 30, 5);
         } else if (p.type === 'carrot') {
-            ctx.fillStyle = '#f1c40f';
-            ctx.beginPath(); ctx.moveTo(15, 30); ctx.lineTo(5, 5); ctx.lineTo(25, 5); ctx.fill();
+            ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(15, 30); ctx.lineTo(5, 5); ctx.lineTo(25, 5); ctx.fill();
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(12, 0, 6, 5);
         } else if (p.type === 'shoes') {
-            ctx.fillStyle = '#3498db'; ctx.fillRect(5, 15, 20, 10);
-            ctx.fillRect(15, 5, 10, 15);
-            ctx.fillStyle = '#f1c40f';
-            ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(20, 10); ctx.lineTo(30, 10); ctx.lineTo(22, 25); ctx.stroke();
+            ctx.fillStyle = '#3498db'; ctx.fillRect(5, 15, 20, 10); ctx.fillRect(15, 5, 10, 15);
+            ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(20, 10); ctx.lineTo(30, 10); ctx.lineTo(22, 25); ctx.stroke();
         } else if (p.type === 'spring') {
-            ctx.strokeStyle = '#95a5a6'; ctx.lineWidth = 3;
-            ctx.beginPath();
-            for(let i=0; i<4; i++) {
-                ctx.arc(15, 25 - i*6, 10, 0, Math.PI, false);
-            }
+            ctx.strokeStyle = '#95a5a6'; ctx.lineWidth = 3; ctx.beginPath();
+            for(let i=0; i<4; i++) ctx.arc(15, 25 - i*6, 10, 0, Math.PI, false);
             ctx.stroke();
         } else if (p.type === 'burger') {
-            ctx.fillStyle = '#e67e22';
-            ctx.beginPath(); ctx.arc(15, 10, 15, Math.PI, 0); ctx.fill();
+            ctx.fillStyle = '#e67e22'; ctx.beginPath(); ctx.arc(15, 10, 15, Math.PI, 0); ctx.fill();
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, 10, 30, 3);
             ctx.fillStyle = '#795548'; ctx.fillRect(0, 13, 30, 6);
             ctx.fillStyle = '#e67e22'; ctx.fillRect(0, 19, 30, 6);
@@ -193,19 +175,10 @@ export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
 export const drawFireballs = (ctx: CanvasRenderingContext2D, fireballs: Fireball[]) => {
     fireballs.forEach(fb => {
         if (!fb.active) return;
-        ctx.save();
-        ctx.translate(fb.x, fb.y);
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = '#e67e22';
-        ctx.fillStyle = '#f39c12';
-        ctx.beginPath();
-        ctx.arc(fb.w/2, fb.h/2, fb.w/2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#e67e22';
-        ctx.globalAlpha = 0.5;
-        ctx.beginPath();
-        ctx.arc(fb.w/2, fb.h/2, fb.w/2 + Math.random() * 5, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.save(); ctx.translate(fb.x, fb.y); ctx.shadowBlur = 20; ctx.shadowColor = '#e67e22';
+        ctx.fillStyle = '#f39c12'; ctx.beginPath(); ctx.arc(fb.w/2, fb.h/2, fb.w/2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#e67e22'; ctx.globalAlpha = 0.5; ctx.beginPath();
+        ctx.arc(fb.w/2, fb.h/2, fb.w/2 + Math.random() * 5, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     });
 };
@@ -213,39 +186,18 @@ export const drawFireballs = (ctx: CanvasRenderingContext2D, fireballs: Fireball
 export const drawEnemyProjectiles = (ctx: CanvasRenderingContext2D, projectiles: EnemyProjectile[]) => {
     projectiles.forEach(p => {
         if (!p.active) return;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = '#ff0000';
-        ctx.fillStyle = '#ff4444';
-        ctx.beginPath();
-        ctx.arc(p.w/2, p.h/2, p.w/2, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.save(); ctx.translate(p.x, p.y); ctx.shadowBlur = 10; ctx.shadowColor = '#ff0000';
+        ctx.fillStyle = '#ff4444'; ctx.beginPath(); ctx.arc(p.w/2, p.h/2, p.w/2, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     });
 };
 
 export const drawWarps = (ctx: CanvasRenderingContext2D, warps: Warp[]) => {
     warps.forEach(w => {
-        ctx.save();
-        ctx.translate(w.x, w.y);
-        
-        // Neon Purple Glowing Door
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = '#bf5af2';
-        ctx.strokeStyle = '#bf5af2';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(0, 0, w.w, w.h);
-        
-        // Dark center
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(0, 0, w.w, w.h);
-        
-        // Inner light
-        ctx.fillStyle = '#bf5af2';
-        ctx.globalAlpha = 0.3;
-        ctx.fillRect(w.w*0.2, w.h*0.2, w.w*0.6, w.h*0.6);
-        
+        ctx.save(); ctx.translate(w.x, w.y); ctx.shadowBlur = 20; ctx.shadowColor = '#bf5af2';
+        ctx.strokeStyle = '#bf5af2'; ctx.lineWidth = 4; ctx.strokeRect(0, 0, w.w, w.h);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; ctx.fillRect(0, 0, w.w, w.h);
+        ctx.fillStyle = '#bf5af2'; ctx.globalAlpha = 0.3; ctx.fillRect(w.w*0.2, w.h*0.2, w.w*0.6, w.h*0.6);
         ctx.restore();
     });
 };
