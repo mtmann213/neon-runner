@@ -1,4 +1,4 @@
-import type { Level, Enemy, Chest, Platform, Block, BackgroundLayer } from './types';
+import type { Level, Enemy, Chest, Platform, Block, BackgroundLayer, Warp } from './types';
 
 const LOOT_TABLE: ('bacon' | 'carrot' | 'shoes' | 'spring' | 'burger')[] = [
     'bacon', 'bacon', 'bacon', 'bacon', // 40%
@@ -17,9 +17,38 @@ const BG_PALETTES = [
     { sky: '#001219', mountain: '#005f73', mid: '#0a9396' },
 ];
 
+export const generateBonusRoom = (groundY: number): Level => {
+    const worldWidth = 1200;
+    const bgLayers: BackgroundLayer[] = [
+        { color: '#000', speed: 0, height: 600, seed: 0 },
+        { color: '#111', speed: 0, height: 400, seed: 0 },
+        { color: '#222', speed: 0, height: 200, seed: 0 },
+    ];
+
+    const platforms: Platform[] = [
+        { x: 100, y: 450, w: 200, h: 20 },
+        { x: 400, y: 350, w: 200, h: 20 },
+        { x: 700, y: 250, w: 200, h: 20 },
+        { x: 400, y: 150, w: 200, h: 20 },
+    ];
+
+    const blocks: Block[] = [
+        { x: 200, y: 350, w: 40, h: 40, hit: false, prizeType: 'burger' },
+        { x: 500, y: 250, w: 40, h: 40, hit: false, prizeType: 'carrot' },
+        { x: 800, y: 150, w: 40, h: 40, hit: false, prizeType: 'shoes' },
+        { x: 500, y: 50, w: 40, h: 40, hit: false, prizeType: 'spring' },
+    ];
+
+    const warps: Warp[] = [
+        { x: 1000, y: groundY - 80, w: 60, h: 80, target: 'main', id: 'exit' }
+    ];
+
+    return { worldWidth, enemies: [], chests: [], platforms, blocks, bgLayers, warps };
+};
+
 export const generateLevel = (levelNumber: number, groundY: number): Level => {
     const seed = levelNumber * 12345;
-    const worldWidth = 5000 + (levelNumber * 2000); // Levels get longer
+    const worldWidth = 5000 + (levelNumber * 2000);
     const palette = BG_PALETTES[levelNumber % BG_PALETTES.length];
 
     const bgLayers: BackgroundLayer[] = [
@@ -32,15 +61,27 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
     const chests: Chest[] = [];
     const platforms: Platform[] = [];
     const blocks: Block[] = [];
+    const warps: Warp[] = [];
 
-    let currentX = 800; // Start spawning after some buffer
+    let currentX = 800;
     let enemyId = 1;
+    let warpSpawned = false;
 
     while (currentX < worldWidth - 1000) {
         const r = Math.random();
         
+        // Randomly spawn a secret warp
+        if (!warpSpawned && currentX > 2000 && Math.random() > 0.8) {
+            warps.push({
+                x: currentX, y: groundY - 80,
+                w: 60, h: 80,
+                target: 'bonus', id: 'secret'
+            });
+            warpSpawned = true;
+            currentX += 200;
+        }
+
         if (r < 0.3) {
-            // Flat area with enemies
             const count = 1 + Math.floor(Math.random() * 3);
             for (let i = 0; i < count; i++) {
                 enemies.push({
@@ -57,13 +98,11 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
             }
             currentX += 1000;
         } else if (r < 0.6) {
-            // Platforming section
             const platCount = 2 + Math.floor(Math.random() * 3);
             for (let i = 0; i < platCount; i++) {
                 const py = groundY - 100 - (i * 100);
                 const px = currentX + (i * 250);
                 platforms.push({ x: px, y: py, w: 150, h: 20 });
-                
                 if (Math.random() > 0.5) {
                     blocks.push({
                         x: px + 55, y: py - 100,
@@ -75,7 +114,6 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
             }
             currentX += platCount * 250 + 200;
         } else if (r < 0.8) {
-            // Hazard section
             enemies.push({
                 id: enemyId++,
                 x: currentX, y: groundY - 40,
@@ -83,7 +121,6 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
                 type: 'spikes', color: '#00ffff',
                 alive: true
             });
-            // Maybe a turret on a platform above
             if (levelNumber > 0) {
                 platforms.push({ x: currentX, y: groundY - 200, w: 100, h: 20 });
                 enemies.push({
@@ -96,7 +133,6 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
             }
             currentX += 600;
         } else {
-            // Treasure cache
             chests.push({
                 x: currentX, y: groundY - 40,
                 w: 40, h: 40, type: Math.random() > 0.5 ? 'health' : 'speed',
@@ -106,7 +142,6 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
         }
     }
 
-    // Boss spawning logic
     const isBossLevel = (levelNumber + 1) % 3 === 0;
     if (isBossLevel) {
         const bossHp = 3 + Math.floor(levelNumber / 3) * 2;
@@ -120,12 +155,5 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
         });
     }
 
-    return {
-        worldWidth,
-        enemies,
-        chests,
-        platforms,
-        blocks,
-        bgLayers
-    };
+    return { worldWidth, enemies, chests, platforms, blocks, bgLayers, warps };
 };

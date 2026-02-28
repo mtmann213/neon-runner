@@ -1,4 +1,4 @@
-import type { Player, Enemy, Platform, Block, Prize, Fireball, EnemyProjectile } from './types';
+import type { Player, Enemy, Platform, Block, Prize, Fireball, EnemyProjectile, Level, Warp } from './types';
 import { audioManager } from './AudioManager';
 
 export const rectIntersect = (r1: any, r2: any) => {
@@ -102,9 +102,7 @@ export const updateEnemyProjectiles = (
 export const updatePlayer = (
     player: Player,
     keys: { [key: string]: boolean },
-    platforms: Platform[],
-    blocks: Block[],
-    prizes: Prize[],
+    level: Level,
     gravity: number,
     jumpStrength: number,
     moveSpeed: number,
@@ -114,8 +112,11 @@ export const updatePlayer = (
     createParticles: (x: number, y: number, color: string, count: number, speed?: number) => void,
     scoreRef: React.MutableRefObject<number>,
     setScore: (s: number) => void,
-    startShake: (d: number, i: number) => void
+    startShake: (d: number, i: number) => void,
+    onWarp: (warp: Warp) => void
 ) => {
+    const { platforms, blocks, prizes } = level;
+
     if (player.invincibilityFrames > 0) player.invincibilityFrames--;
     if (player.speedBoostTimer > 0) player.speedBoostTimer--;
     if (player.jumpBoostTimer > 0) player.jumpBoostTimer--;
@@ -251,6 +252,13 @@ export const updatePlayer = (
             }
         }
     });
+
+    // Warp Detection
+    (level.warps || []).forEach(warp => {
+        if (rectIntersect(player, warp)) {
+            onWarp(warp);
+        }
+    });
 };
 
 export const updatePrizes = (
@@ -293,10 +301,7 @@ export const updateEnemies = (
 ) => {
     enemies.forEach(enemy => {
         if (!enemy.alive) return;
-        
-        // Initial startX for patrol/flying
         if ((enemy as any).startX === undefined) (enemy as any).startX = enemy.x;
-
         if (enemy.type === 'patrol' && enemy.vx !== undefined) {
             enemy.x += enemy.vx;
             if (Math.abs(enemy.x - (enemy as any).startX) > 300) enemy.vx *= -1;
@@ -335,7 +340,6 @@ export const updateEnemies = (
                 }
             }
         }
-
         if (rectIntersect(player, enemy)) {
             if (player.giantTimer > 0) {
                 enemy.alive = false;
@@ -346,9 +350,6 @@ export const updateEnemies = (
                 if (audioEnabled) audioManager.playBop();
                 return;
             }
-
-            // --- HIT DETECTION ---
-            // If falling and above enemy head
             const prevPlayerBottom = player.y + player.height - player.vy;
             if (player.vy > 0 && prevPlayerBottom <= enemy.y && enemy.type !== 'spikes') {
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {

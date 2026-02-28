@@ -184,3 +184,28 @@ export const drawEnemyProjectiles = (ctx: CanvasRenderingContext2D, projectiles:
         ctx.restore();
     });
 };
+
+export const drawWarps = (ctx: CanvasRenderingContext2D, warps: Warp[]) => {
+    warps.forEach(w => {
+        ctx.save();
+        ctx.translate(w.x, w.y);
+        
+        // Neon Purple Glowing Door
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#bf5af2';
+        ctx.strokeStyle = '#bf5af2';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(0, 0, w.w, w.h);
+        
+        // Dark center
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, w.w, w.h);
+        
+        // Inner light
+        ctx.fillStyle = '#bf5af2';
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(w.w*0.2, w.h*0.2, w.w*0.6, w.h*0.6);
+        
+        ctx.restore();
+    });
+};

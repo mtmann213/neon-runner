@@ -62,6 +62,15 @@ export interface Block {
   prizeType?: 'bacon' | 'carrot' | 'shoes' | 'spring' | 'burger';
 }
 
+export interface Warp {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  target: 'bonus' | 'main';
+  id: string;
+}
+
 export interface Prize {
   x: number;
   y: number;
@@ -97,6 +106,7 @@ export interface Level {
   platforms: Platform[];
   blocks: Block[];
   bgLayers: BackgroundLayer[];
+  warps?: Warp[];
 }
 
 export interface Player {

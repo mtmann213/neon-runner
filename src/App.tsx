@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { audioManager } from './AudioManager';
-import type { Player, Enemy, Chest, Platform, Block, Particle, Prize, Fireball, EnemyProjectile } from './types';
-import { generateLevel } from './LevelGenerator';
+import type { Player, Enemy, Chest, Platform, Block, Particle, Prize, Fireball, EnemyProjectile, Level, Warp } from './types';
+import { generateLevel, generateBonusRoom } from './LevelGenerator';
 import { updatePlayer, updateEnemies, updatePrizes, updateFireballs, updateEnemyProjectiles, rectIntersect } from './physics';
 import * as Renderer from './renderer';
 
@@ -25,6 +25,11 @@ const GameCanvas: React.FC = () => {
   const livesRef = useRef(3);
   const gameStateRef = useRef<'playing' | 'won' | 'gameover' | 'gameclear'>('playing');
 
+  // Secret States
+  const [isBonusRoom, setIsBonusRoom] = useState(false);
+  const savedMainLevelRef = useRef<Level | null>(null);
+  const savedPlayerPosRef = useRef<{x: number, y: number} | null>(null);
+
   useEffect(() => {
     if (!gameStarted) return;
     if (audioEnabled) audioManager.startMusic();
@@ -40,16 +45,22 @@ const GameCanvas: React.FC = () => {
     const rollSpeed = 10;
     const groundY = canvas.height - 100;
 
-    // --- PROCEDURAL LEVEL GENERATION ---
-    const level = generateLevel(currentLevel, groundY);
+    // --- LEVEL SELECTION ---
+    let level: Level;
+    if (isBonusRoom) {
+        level = generateBonusRoom(groundY);
+    } else {
+        level = savedMainLevelRef.current || generateLevel(currentLevel, groundY);
+    }
+    
     const worldWidth = level.worldWidth;
-    let enemies: Enemy[] = [...level.enemies];
-    let chests: Chest[] = [...level.chests];
-    let platforms: Platform[] = [...level.platforms];
-    let blocks: Block[] = [...level.blocks];
-    let prizes: Prize[] = [];
-    let fireballs: Fireball[] = [];
-    let enemyProjectiles: EnemyProjectile[] = [];
+    let enemies: Enemy[] = level.enemies;
+    let chests: Chest[] = level.chests;
+    let platforms: Platform[] = level.platforms;
+    let blocks: Block[] = level.blocks;
+    let prizes: Prize[] = (level as any).prizes || [];
+    let fireballs: Fireball[] = (level as any).fireballs || [];
+    let enemyProjectiles: EnemyProjectile[] = (level as any).enemyProjectiles || [];
     
     gameStateRef.current = 'playing';
     setGameState('playing');
@@ -78,7 +89,9 @@ const GameCanvas: React.FC = () => {
     let frameCount = 0;
     let cameraX = 0;
     const player: Player = {
-      x: 50, y: 100, width: 40, height: 60, vx: 0, vy: 0,
+      x: savedPlayerPosRef.current?.x || 50, 
+      y: savedPlayerPosRef.current?.y || 100, 
+      width: 40, height: 60, vx: 0, vy: 0,
       isGrounded: false, isRolling: false, rollTimer: 0,
       invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
       giantTimer: 0, fireballTimer: 0,
@@ -91,7 +104,6 @@ const GameCanvas: React.FC = () => {
         if (e.code === 'ArrowRight') player.facingRight = true;
         if (e.code === 'ArrowLeft') player.facingRight = false;
         if (e.code === 'Space') player.jumpBufferTimer = 10;
-        
         if (e.code === 'KeyF' && gameStateRef.current === 'playing' && player.fireballTimer <= 0) {
             fireballs.push({
                 x: player.x + (player.facingRight ? player.width : -20),
@@ -106,6 +118,23 @@ const GameCanvas: React.FC = () => {
     const handleKeyUp = (e: KeyboardEvent) => keys[e.code] = false;
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+
+    const onWarp = (warp: Warp) => {
+        if (warp.target === 'bonus') {
+            // Save current state
+            (level as any).prizes = prizes;
+            (level as any).fireballs = fireballs;
+            (level as any).enemyProjectiles = enemyProjectiles;
+            savedMainLevelRef.current = level;
+            savedPlayerPosRef.current = { x: player.x, y: player.y };
+            setIsBonusRoom(true);
+            setRetryKey(prev => prev + 1); // Trigger effect reload
+        } else {
+            // Return to main
+            setIsBonusRoom(false);
+            setRetryKey(prev => prev + 1);
+        }
+    };
 
     const onPlayerDamage = () => {
         if (player.invincibilityFrames > 0 || player.giantTimer > 0) return;
@@ -128,11 +157,9 @@ const GameCanvas: React.FC = () => {
     const update = () => {
       if (gameStateRef.current !== 'playing') return;
       frameCount++;
-      
       if (shakeTimer > 0) shakeTimer--;
 
-      if (player.x > worldWidth - 120) {
-        // Infinite scaling levels
+      if (!isBonusRoom && player.x > worldWidth - 120) {
         gameStateRef.current = 'won';
         setGameState('won');
         const nextLevel = currentLevel + 1;
@@ -144,20 +171,14 @@ const GameCanvas: React.FC = () => {
       }
 
       updatePlayer(
-        player, keys, platforms, blocks, prizes, gravity, jumpStrength, moveSpeed, rollSpeed, 
-        groundY, audioEnabled, createParticles, scoreRef, setScore, startShake
+        player, keys, level, gravity, jumpStrength, moveSpeed, rollSpeed, 
+        groundY, audioEnabled, createParticles, scoreRef, setScore, startShake, onWarp
       );
 
-      updateFireballs(
-          fireballs, enemies, blocks, platforms, groundY, gravity, cameraX, canvas.width, 
-          audioEnabled, createParticles, scoreRef, setScore, startShake
-      );
-
+      updateFireballs(fireballs, enemies, blocks, platforms, groundY, gravity, cameraX, canvas.width, audioEnabled, createParticles, scoreRef, setScore, startShake);
       updateEnemyProjectiles(enemyProjectiles, player, cameraX, canvas.width, onPlayerDamage);
-
       updatePrizes(prizes, player, groundY, gravity, (prize) => {
-          scoreRef.current += 500;
-          setScore(scoreRef.current);
+          scoreRef.current += 500; setScore(scoreRef.current);
           createParticles(prize.x + 15, prize.y + 15, '#f1c40f', 20, 4);
           if (audioEnabled) audioManager.playChest();
           if (prize.type === 'bacon') player.bigTimer = 600;
@@ -167,20 +188,14 @@ const GameCanvas: React.FC = () => {
           else if (prize.type === 'spring') player.jumpBoostTimer = 600;
       });
 
-      if (player.isRolling && frameCount % 2 === 0) {
-          createParticles(player.x + player.width/2, groundY, '#7d5c34', 2, 1);
-      }
+      if (player.isRolling && frameCount % 2 === 0) createParticles(player.x + player.width/2, groundY, '#7d5c34', 2, 1);
 
-      updateEnemies(
-        enemies, player, enemyProjectiles, groundY, gravity, frameCount, audioEnabled, 
-        createParticles, scoreRef, setScore, startShake, onPlayerDamage
-      );
+      updateEnemies(enemies, player, enemyProjectiles, groundY, gravity, frameCount, audioEnabled, createParticles, scoreRef, setScore, startShake, onPlayerDamage);
 
       chests.forEach(chest => {
           if (!chest.open && rectIntersect(player, chest)) {
               chest.open = true; 
-              scoreRef.current += 100;
-              setScore(scoreRef.current);
+              scoreRef.current += 100; setScore(scoreRef.current);
               createParticles(chest.x + 20, chest.y + 20, '#f1c40f', 15, 4);
               startShake(10, 3);
               if (audioEnabled) audioManager.playChest();
@@ -201,22 +216,22 @@ const GameCanvas: React.FC = () => {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
-      if (shakeTimer > 0) {
-          ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
-      }
+      if (shakeTimer > 0) ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
 
       Renderer.drawBackground(ctx, canvas, cameraX, groundY, level.bgLayers);
 
       ctx.save(); ctx.translate(-cameraX, 0);
-      ctx.fillStyle = '#7d5c34'; ctx.fillRect(0, groundY, worldWidth, canvas.height - groundY);
-      ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, groundY, worldWidth, 10);
-      grass.forEach(g => { ctx.fillStyle = '#27ae60'; ctx.fillRect(g.x, g.y - g.size, 4, g.size); });
+      ctx.fillStyle = isBonusRoom ? '#2c3e50' : '#7d5c34'; ctx.fillRect(0, groundY, worldWidth, canvas.height - groundY);
+      ctx.fillStyle = isBonusRoom ? '#00ffff' : '#2ecc71'; ctx.fillRect(0, groundY, worldWidth, 10);
+      if (!isBonusRoom) grass.forEach(g => { ctx.fillStyle = '#27ae60'; ctx.fillRect(g.x, g.y - g.size, 4, g.size); });
       
-      // End Flag
-      ctx.fillStyle = '#2c3e50'; ctx.fillRect(worldWidth - 100, groundY - 150, 10, 150);
-      ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.moveTo(worldWidth - 100, groundY - 150);
-      ctx.lineTo(worldWidth - 40, groundY - 120); ctx.lineTo(worldWidth - 100, groundY - 90); ctx.fill();
+      if (!isBonusRoom) {
+          ctx.fillStyle = '#2c3e50'; ctx.fillRect(worldWidth - 100, groundY - 150, 10, 150);
+          ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.moveTo(worldWidth - 100, groundY - 150);
+          ctx.lineTo(worldWidth - 40, groundY - 120); ctx.lineTo(worldWidth - 100, groundY - 90); ctx.fill();
+      }
 
+      Renderer.drawWarps(ctx, level.warps || []);
       particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.size, p.size); });
       ctx.globalAlpha = 1.0;
 
@@ -226,7 +241,7 @@ const GameCanvas: React.FC = () => {
       });
 
       platforms.forEach(p => {
-          ctx.fillStyle = '#95a5a6'; ctx.fillRect(p.x, p.y, p.w, p.h);
+          ctx.fillStyle = isBonusRoom ? '#00ffff' : '#95a5a6'; ctx.fillRect(p.x, p.y, p.w, p.h);
           ctx.strokeStyle = '#bdc3c7'; ctx.strokeRect(p.x, p.y, p.w, p.h);
       });
 
@@ -258,7 +273,11 @@ const GameCanvas: React.FC = () => {
       ctx.shadowBlur = 0;
       ctx.fillStyle = 'white'; ctx.font = 'bold 24px Arial'; 
       ctx.fillText(`Score: ${scoreRef.current}`, canvas.width - 150, 45);
-      ctx.fillText(`Level: ${currentLevel + 1}`, canvas.width - 150, 80);
+      if (!isBonusRoom) ctx.fillText(`Level: ${currentLevel + 1}`, canvas.width - 150, 80);
+      else {
+          ctx.fillStyle = '#bf5af2'; ctx.shadowBlur = 10; ctx.shadowColor = '#bf5af2';
+          ctx.fillText('BONUS ROOM', canvas.width - 180, 80);
+      }
 
       ctx.restore();
     };
@@ -271,12 +290,23 @@ const GameCanvas: React.FC = () => {
         window.removeEventListener('keyup', handleKeyUp); 
         audioManager.stopMusic();
     };
-  }, [gameStarted, currentLevel, retryKey]);
+  }, [gameStarted, currentLevel, retryKey, isBonusRoom]);
 
   const resetGame = () => {
       livesRef.current = 3; setLives(3);
       scoreRef.current = 0; setScore(0);
+      setIsBonusRoom(false);
+      savedMainLevelRef.current = null;
+      savedPlayerPosRef.current = null;
       setRetryKey(prev => prev + 1);
+      setGameState('playing');
+  };
+
+  const nextLevel = () => {
+      setCurrentLevel(prev => prev + 1);
+      setIsBonusRoom(false);
+      savedMainLevelRef.current = null;
+      savedPlayerPosRef.current = null;
       setGameState('playing');
   };
 
@@ -313,10 +343,7 @@ const GameCanvas: React.FC = () => {
           <div className="state-overlay victory">
               <h1>LEVEL {currentLevel + 1} CLEAR!</h1>
               <p>Score: {score}</p>
-              <button className="start-btn" onClick={() => {
-                  setCurrentLevel(prev => prev + 1);
-                  setGameState('playing');
-              }}>NEXT LEVEL</button>
+              <button className="start-btn" onClick={nextLevel}>NEXT LEVEL</button>
           </div>
       )}
 
@@ -330,9 +357,9 @@ const GameCanvas: React.FC = () => {
       )}
 
       <div className="instructions">
-        <h3>Procedural Generation Active!</h3>
-        <p>Levels are now randomly generated and get longer as you progress.</p>
-        <p>New Enemies: Flying Drones and Turrets added!</p>
+        <h3>Secret Bonus Rooms!</h3>
+        <p>Find the glowing purple doors to enter secret rooms filled with prizes.</p>
+        <p>Exit through the same door to return to the main level.</p>
       </div>
     </div>
   );

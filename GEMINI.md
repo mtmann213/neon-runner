@@ -31,7 +31,7 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 - Added enemy projectiles and corresponding physics/rendering.
 
 ## Pending Tasks / Ideas
-- [ ] **Secret:** Add hidden "warp pipes" or doors to secret bonus rooms.
+- [x] **Secret:** Add hidden "warp pipes" or doors to secret bonus rooms.
 - [ ] **Mechanics:** Add a wall-slide and wall-jump.
 - [ ] **Visuals:** Add a "Ghost Trail" effect for high-speed movement.
 - [ ] **Architecture:** Move player input handling to a dedicated manager.
