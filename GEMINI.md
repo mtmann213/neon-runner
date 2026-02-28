@@ -29,6 +29,8 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 - Implemented `AudioManager.ts` for procedural sound.
 - Integrated audio triggers (jump, bop, damage, chest) into `App.tsx`.
 - Added `Start Game` overlay for audio activation.
+- **FIX:** Added `gameStarted` to `useEffect` dependency array so the game loop actually starts.
+- **FIX:** Added `audioManager.stopMusic()` to `useEffect` cleanup.
 
 ## Pending Tasks / Ideas
 - [ ] Add sound effects (Web Audio API).

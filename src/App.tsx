@@ -297,8 +297,9 @@ const GameCanvas: React.FC = () => {
         cancelAnimationFrame(animationFrameId); 
         window.removeEventListener('keydown', handleKeyDown); 
         window.removeEventListener('keyup', handleKeyUp); 
+        audioManager.stopMusic();
     };
-  }, []);
+  }, [gameStarted]);
 
   return (
     <div className="game-container">
