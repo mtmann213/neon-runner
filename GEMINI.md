@@ -48,11 +48,12 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 - **FIX:** Resolved TypeScript build errors that were causing a blank screen on start (missing `checkCollision`, unused `lives`, `undefined` check on `enemy.vx`).
 
 ## Pending Tasks / Ideas
-- [ ] Add sound effects (Web Audio API).
-- [ ] Implement Level 2 or more complex terrain.
-- [ ] Add a Main Menu and Game Over screen.
-- [ ] Improve player/enemy sprite details.
-- [ ] Add vertical scrolling/platforms.
+- [ ] **Feel:** Implement Coyote Time and Jump Buffering.
+- [ ] **Architecture:** Refactor `App.tsx` into specialized modules (Physics, Rendering, State).
+- [ ] **Visuals:** Add Neon Glow (shadowBlur) and Parallax background layers.
+- [ ] **Content:** Add a "Double Jump" power-up.
+- [ ] **Polish:** Add a Main Menu and a "Game Clear" final screen.
+- [ ] **Persistence:** Save high scores to LocalStorage.
 
 ## Technical Debt / Known Issues
 - All game logic is currently in one large `App.tsx` file.
