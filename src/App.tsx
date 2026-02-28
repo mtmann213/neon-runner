@@ -8,6 +8,7 @@ import * as Renderer from './renderer';
 
 const GameCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [lives, setLives] = useState(3);
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -172,6 +173,7 @@ const GameCanvas: React.FC = () => {
         }
 
         livesRef.current--;
+        setLives(livesRef.current);
         player.invincibilityFrames = 60;
         createParticles(player.x + player.width/2, player.y + player.height/2, '#3498db', 10, 3);
         startShake(20, 10);
@@ -214,7 +216,7 @@ const GameCanvas: React.FC = () => {
           if (prize.type === 'bacon') player.bigTimer = 600;
           else if (prize.type === 'burger') { player.giantTimer = 600; startShake(20, 10); }
           else if (prize.type === 'wing') player.wingTimer = 600;
-          else if (prize.type === 'carrot') { livesRef.current++; }
+          else if (prize.type === 'carrot') { livesRef.current++; setLives(livesRef.current); }
 
           else if (prize.type === 'shoes') player.speedBoostTimer = 600;
           else if (prize.type === 'spring') player.jumpBoostTimer = 600;
@@ -235,7 +237,7 @@ const GameCanvas: React.FC = () => {
                   w: 30, h: 30, vx: (Math.random() - 0.5) * 2, vy: -5,
                   type: getRandomPrize(), collected: false
               });
-              if (chest.type === 'health') { livesRef.current++; }
+              if (chest.type === 'health') { livesRef.current++; setLives(livesRef.current); }
 
               else if (chest.type === 'speed') player.speedBoostTimer = 300;
           }
@@ -357,7 +359,7 @@ const GameCanvas: React.FC = () => {
       Renderer.drawBoy(ctx, player, frameCount, level.waterLevel !== undefined && player.y + player.height/2 > level.waterLevel);
       ctx.restore();
 
-      for (let i = 0; i < livesRef.current; i++) Renderer.drawHeart(ctx, 20 + i * 35, 20, 25);
+      for (let i = 0; i < lives; i++) Renderer.drawHeart(ctx, 20 + i * 35, 20, 25);
 
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(20, 60, 100, 10);
@@ -392,7 +394,7 @@ const GameCanvas: React.FC = () => {
   }, [gameStarted, currentLevel, retryKey, isBonusRoom]);
 
   const resetGame = () => {
-      livesRef.current = 3;
+      livesRef.current = 3; setLives(3);
       scoreRef.current = 0; setScore(0);
 
       setIsBonusRoom(false);
@@ -522,7 +524,7 @@ const GameCanvas: React.FC = () => {
                   <div>High Score: {highScore}</div>
               </div>
               <button className="start-btn" onClick={() => {
-                  livesRef.current = 3;
+                  livesRef.current = 3; setLives(3);
                   scoreRef.current = 0; setScore(0);
 
                   setCurrentLevel(0);
