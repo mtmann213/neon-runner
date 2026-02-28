@@ -320,11 +320,11 @@ const GameCanvas: React.FC = () => {
 
       enemies.forEach(enemy => {
           if (!enemy.alive) return;
-          if (enemy.type === 'patrol') {
+          if (enemy.type === 'patrol' && enemy.vx !== undefined) {
               enemy.x += enemy.vx;
               if (enemy.x > enemy.id * 800 + 400 || enemy.x < enemy.id * 800 - 400) enemy.vx *= -1;
           }
-          if (checkCollision(player, enemy)) {
+          if (rectIntersect(player, enemy)) {
               if (player.vy > 0 && player.y < enemy.y && enemy.type !== 'spikes') {
                   enemy.alive = false; player.vy = -8; 
                   scoreRef.current += 50; setScore(scoreRef.current);
@@ -399,7 +399,7 @@ const GameCanvas: React.FC = () => {
       ctx.restore();
       
       // UI Hearts & Score
-      for (let i = 0; i < livesRef.current; i++) drawHeart(ctx, 20 + i * 35, 20, 25);
+      for (let i = 0; i < lives; i++) drawHeart(ctx, 20 + i * 35, 20, 25);
       ctx.fillStyle = 'white'; ctx.font = 'bold 24px Arial'; 
       ctx.fillText(`Score: ${scoreRef.current}`, canvas.width - 150, 45);
 

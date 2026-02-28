@@ -45,6 +45,7 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
   - Treasure blocks ($) that give points when head-bumped.
   - Added "Coin" sound effect for hitting blocks.
 - **FIX:** Added `retryKey` and `currentLevel` to `useEffect` dependency array so "Next Level" and "Retry" actually reload the game loop.
+- **FIX:** Resolved TypeScript build errors that were causing a blank screen on start (missing `checkCollision`, unused `lives`, `undefined` check on `enemy.vx`).
 
 ## Pending Tasks / Ideas
 - [ ] Add sound effects (Web Audio API).
