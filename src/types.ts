@@ -108,6 +108,7 @@ export interface Level {
   bgLayers: BackgroundLayer[];
   warps?: Warp[];
   prizes?: Prize[];
+  waterLevel?: number; // Y coordinate of water surface
 }
 
 export interface Player {

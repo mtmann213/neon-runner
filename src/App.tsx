@@ -247,7 +247,7 @@ const GameCanvas: React.FC = () => {
       ctx.save();
       if (shakeTimer > 0) ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
 
-      Renderer.drawBackground(ctx, canvas, cameraX, groundY, level.bgLayers);
+      Renderer.drawBackground(ctx, canvas, cameraX, groundY, level.bgLayers, level.waterLevel);
 
       ctx.save(); ctx.translate(-cameraX, 0);
       ctx.fillStyle = isBonusRoom ? '#2c3e50' : '#7d5c34'; ctx.fillRect(0, groundY, worldWidth, canvas.height - groundY);

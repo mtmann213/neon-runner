@@ -101,7 +101,8 @@ export const drawBackground = (
     canvas: HTMLCanvasElement,
     cameraX: number,
     groundY: number,
-    layers?: BackgroundLayer[]
+    layers?: BackgroundLayer[],
+    waterLevel?: number
 ) => {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -119,6 +120,35 @@ export const drawBackground = (
                 ctx.fill();
             }
         });
+    }
+
+    // --- WATER RENDERING ---
+    if (waterLevel !== undefined) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 119, 190, 0.4)'; // Semi-transparent blue
+        ctx.fillRect(0, waterLevel, canvas.width, canvas.height - waterLevel);
+        
+        // Water Surface Line
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#00ffff';
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, waterLevel);
+        ctx.lineTo(canvas.width, waterLevel);
+        ctx.stroke();
+
+        // Procedural Bubbles
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.shadowBlur = 0;
+        for (let i = 0; i < 20; i++) {
+            const bx = (Math.sin(Date.now() * 0.001 + i) * 100 + i * 100) % canvas.width;
+            const by = (waterLevel + 50 + i * 30 + Math.cos(Date.now() * 0.002 + i) * 50) % (canvas.height - waterLevel) + waterLevel;
+            ctx.beginPath();
+            ctx.arc(bx, by, 2 + (i % 4), 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
     }
 };
 

@@ -134,7 +134,10 @@ export const updatePlayer = (
     const effectiveMoveSpeed = player.speedBoostTimer > 0 ? moveSpeed * 1.6 : moveSpeed;
     const effectiveJumpStrength = player.jumpBoostTimer > 0 ? jumpStrength * 1.5 : jumpStrength;
 
-    if (keys['ShiftLeft'] && player.isGrounded && !player.isRolling) {
+    // --- WATER CHECK ---
+    const inWater = level.waterLevel !== undefined && player.y + currentHeight/2 > level.waterLevel;
+
+    if (keys['ShiftLeft'] && player.isGrounded && !player.isRolling && !inWater) {
         player.isRolling = true;
         player.rollTimer = 20;
         player.vx = player.facingRight ? rollSpeed : -rollSpeed;
@@ -143,31 +146,26 @@ export const updatePlayer = (
 
     if (!player.isRolling) {
         player.vx = 0;
-        if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed;
-        if (keys['ArrowRight']) player.vx = effectiveMoveSpeed;
+        const waterMoveReduction = inWater ? 0.6 : 1.0;
+        if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed * waterMoveReduction;
+        if (keys['ArrowRight']) player.vx = effectiveMoveSpeed * waterMoveReduction;
+        
         if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
         if (player.isGrounded) {
             player.coyoteTimer = 6;
-            player.airJumpsLeft = 1; // Double Jump (1 extra air jump)
+            player.airJumpsLeft = 1; 
         } else if (player.coyoteTimer > 0) {
             player.coyoteTimer--;
         }
 
-        // Wall Jump Check
-        let onWall = false;
-        let wallDir = 0; 
-        if (!player.isGrounded && !isGiant) {
-            blocks.forEach(b => {
-                if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
-                    if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
-                    else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
-                }
-            });
-        }
-        player.isWallSliding = onWall && player.vy > 0;
-
         if (player.jumpBufferTimer > 0) {
-            if (player.coyoteTimer > 0) {
+            if (inWater) {
+                // Swimming boost
+                player.vy = -4;
+                player.jumpBufferTimer = 0;
+                createParticles(player.x + player.width/2, player.y + currentHeight/2, '#ffffff', 3, 1);
+            }
+            else if (player.coyoteTimer > 0) {
                 player.vy = effectiveJumpStrength;
                 player.isGrounded = false;
                 player.coyoteTimer = 0;
@@ -180,7 +178,7 @@ export const updatePlayer = (
                 player.vx = -wallDir * 8;
                 player.facingRight = wallDir === -1;
                 player.jumpBufferTimer = 0;
-                player.airJumpsLeft = 1; // Reset air jumps on wall jump
+                player.airJumpsLeft = 1;
                 createParticles(player.x + (wallDir === 1 ? player.width : 0), player.y + currentHeight/2, '#00ffff', 10, 2);
                 if (audioEnabled) audioManager.playJump();
             }
@@ -197,7 +195,23 @@ export const updatePlayer = (
         if (player.rollTimer <= 0) player.isRolling = false;
     }
 
-    player.vy += (player.isWallSliding ? gravity * 0.3 : gravity);
+    // Wall Jump Check
+    let onWall = false;
+    let wallDir = 0; 
+    if (!player.isGrounded && !isGiant && !inWater) {
+        blocks.forEach(b => {
+            if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
+                if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
+                else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
+            }
+        });
+    }
+    player.isWallSliding = onWall && player.vy > 0;
+
+    const waterGravityReduction = inWater ? 0.3 : 1.0;
+    player.vy += (player.isWallSliding ? gravity * 0.3 : gravity * waterGravityReduction);
+    if (inWater && player.vy > 3) player.vy = 3; // Slower falling in water
+
     player.x += player.vx;
     if (!isGiant) {
         blocks.forEach(obj => {
@@ -384,8 +398,10 @@ export const updateEnemies = (
                         scoreRef.current += 1000; setScore(scoreRef.current);
                     }
                 } else {
-                    enemy.alive = false; player.vy = -8; 
-                    scoreRef.current += 50; setScore(scoreRef.current);
+                    enemy.alive = false;
+                    player.vy = -8;
+                    scoreRef.current += 50;
+                    setScore(scoreRef.current);
                     createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                     startShake(15, 5);
                     if (audioEnabled) audioManager.playBop();
