@@ -33,6 +33,12 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 - **FIX:** Added `audioManager.stopMusic()` to `useEffect` cleanup.
 - **IMPROVEMENT:** Hardened `AudioManager.ts` with try-catch and null checks for environments without audio drivers.
 - **IMPROVEMENT:** Added Audio ON/OFF toggle to the Start Overlay.
+- **NEW:** Level Progression System.
+  - Level data is now managed via a `LEVELS` configuration object.
+  - Added Game States: `playing`, `won`, `gameover`.
+  - Added Victory Screen for clearing a level.
+  - Added Game Over screen with Retry functionality.
+  - Reaching the red flag at the end of the world now triggers the level clear.
 
 ## Pending Tasks / Ideas
 - [ ] Add sound effects (Web Audio API).

@@ -8,9 +8,46 @@ const GameCanvas: React.FC = () => {
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [gameState, setGameState] = useState<'playing' | 'won' | 'gameover'>('playing');
+  const [currentLevel, setCurrentLevel] = useState(0);
   
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
+  const gameStateRef = useRef<'playing' | 'won' | 'gameover'>('playing');
+
+  // --- LEVEL DATA ---
+  const LEVELS = [
+    {
+      worldWidth: 5000,
+      enemies: [
+        { id: 1, x: 800, y: 0, w: 40, h: 40, vx: 2, type: 'patrol', color: '#e74c3c', alive: true },
+        { id: 2, x: 1600, y: 0, w: 40, h: 40, vx: 3, type: 'patrol', color: '#e74c3c', alive: true },
+        { id: 3, x: 2400, y: 0, w: 60, h: 40, type: 'spikes', color: '#2c3e50', alive: true },
+        { id: 4, x: 3200, y: 0, w: 40, h: 40, vx: 4, type: 'patrol', color: '#e74c3c', alive: true },
+        { id: 5, x: 4000, y: 0, w: 40, h: 40, vx: 5, type: 'patrol', color: '#e74c3c', alive: true }
+      ],
+      chests: [
+        { x: 1200, y: 0, w: 40, h: 40, type: 'health', open: false },
+        { x: 2800, y: 0, w: 40, h: 40, type: 'speed', open: false },
+        { x: 4500, y: 0, w: 40, h: 40, type: 'health', open: false }
+      ]
+    },
+    {
+        worldWidth: 6000,
+        enemies: [
+          { id: 6, x: 1000, y: 0, w: 40, h: 40, vx: 4, type: 'patrol', color: '#e74c3c', alive: true },
+          { id: 7, x: 2000, y: 0, w: 80, h: 40, type: 'spikes', color: '#2c3e50', alive: true },
+          { id: 8, x: 3000, y: 0, w: 40, h: 40, vx: 6, type: 'patrol', color: '#e74c3c', alive: true },
+          { id: 9, x: 4000, y: 0, w: 100, h: 40, type: 'spikes', color: '#2c3e50', alive: true },
+          { id: 10, x: 5000, y: 0, w: 40, h: 40, vx: 8, type: 'patrol', color: '#e74c3c', alive: true }
+        ],
+        chests: [
+          { x: 1500, y: 0, w: 40, h: 40, type: 'speed', open: false },
+          { x: 3500, y: 0, w: 40, h: 40, type: 'health', open: false },
+          { x: 5500, y: 0, w: 40, h: 40, type: 'speed', open: false }
+        ]
+      }
+  ];
 
   useEffect(() => {
     if (!gameStarted) return;
@@ -21,13 +58,21 @@ const GameCanvas: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // --- GAME STATE ---
+    // --- GAME CONSTANTS ---
     const gravity = 0.5;
     const jumpStrength = -10;
     let moveSpeed = 5;
     const rollSpeed = 10;
     const groundY = canvas.height - 100;
-    const worldWidth = 5000;
+
+    // Load Level Data
+    const level = LEVELS[currentLevel] || LEVELS[0];
+    const worldWidth = level.worldWidth;
+    let enemies = level.enemies.map(e => ({ ...e, y: groundY - e.h }));
+    let chests = level.chests.map(c => ({ ...c, y: groundY - c.h }));
+    
+    gameStateRef.current = 'playing';
+    setGameState('playing');
 
     // Screen Shake State
     let shakeTimer = 0;
@@ -70,20 +115,6 @@ const GameCanvas: React.FC = () => {
       isGrounded: false, isRolling: false, rollTimer: 0,
       invincibilityFrames: 0, speedBoostTimer: 0, facingRight: true
     };
-
-    let enemies = [
-        { id: 1, x: 800, y: groundY - 40, w: 40, h: 40, vx: 2, type: 'patrol', color: '#e74c3c', alive: true },
-        { id: 2, x: 1600, y: groundY - 40, w: 40, h: 40, vx: 3, type: 'patrol', color: '#e74c3c', alive: true },
-        { id: 3, x: 2400, y: groundY - 40, w: 60, h: 40, type: 'spikes', color: '#2c3e50', alive: true },
-        { id: 4, x: 3200, y: groundY - 40, w: 40, h: 40, vx: 4, type: 'patrol', color: '#e74c3c', alive: true },
-        { id: 5, x: 4000, y: groundY - 40, w: 40, h: 40, vx: 5, type: 'patrol', color: '#e74c3c', alive: true }
-    ];
-
-    const chests = [
-        { x: 1200, y: groundY - 40, w: 40, h: 40, type: 'health', open: false },
-        { x: 2800, y: groundY - 40, w: 40, h: 40, type: 'speed', open: false },
-        { x: 4500, y: groundY - 40, w: 40, h: 40, type: 'health', open: false }
-    ];
 
     const keys: { [key: string]: boolean } = {};
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -166,10 +197,19 @@ const GameCanvas: React.FC = () => {
     };
 
     const update = () => {
+      if (gameStateRef.current !== 'playing') return;
+
       frameCount++;
       if (shakeTimer > 0) shakeTimer--;
       if (player.invincibilityFrames > 0) player.invincibilityFrames--;
       if (player.speedBoostTimer > 0) { player.speedBoostTimer--; moveSpeed = 8; } else { moveSpeed = 5; }
+
+      // Check Victory (Reached Flag)
+      if (player.x > worldWidth - 120) {
+        gameStateRef.current = 'won';
+        setGameState('won');
+        return;
+      }
 
       if (keys['ShiftLeft'] && player.isGrounded && !player.isRolling) {
         player.isRolling = true; player.rollTimer = 20; player.vx = player.facingRight ? rollSpeed : -rollSpeed;
@@ -236,11 +276,8 @@ const GameCanvas: React.FC = () => {
                   startShake(20, 10); // Big shake for damage
                   if (audioEnabled) audioManager.playDamage();
                   if (livesRef.current <= 0) {
-                      livesRef.current = 3; setLives(3);
-                      scoreRef.current = 0; setScore(0);
-                      player.x = 50; player.y = 100; cameraX = 0;
-                      enemies.forEach(e => e.alive = true);
-                      chests.forEach(c => c.open = false);
+                      gameStateRef.current = 'gameover';
+                      setGameState('gameover');
                   }
               }
           }
@@ -321,6 +358,30 @@ const GameCanvas: React.FC = () => {
         </div>
       )}
       <canvas ref={canvasRef} width={800} height={600} />
+
+      {gameState === 'won' && (
+          <div className="state-overlay victory">
+              <h1>LEVEL {currentLevel + 1} CLEAR!</h1>
+              <p>Score: {score}</p>
+              <button className="start-btn" onClick={() => {
+                  setCurrentLevel(prev => (prev + 1) % LEVELS.length);
+                  setGameState('playing');
+              }}>NEXT LEVEL</button>
+          </div>
+      )}
+
+      {gameState === 'gameover' && (
+          <div className="state-overlay gameover">
+              <h1>GAME OVER</h1>
+              <p>Score: {score}</p>
+              <button className="start-btn" onClick={() => {
+                  livesRef.current = 3; setLives(3);
+                  scoreRef.current = 0; setScore(0);
+                  setGameState('playing');
+              }}>RETRY</button>
+          </div>
+      )}
+
       <div className="instructions">
         <h3>Game Juice: Synthwave Audio!</h3>
         <p>Added procedural synthwave music and sound effects using Web Audio API.</p>
