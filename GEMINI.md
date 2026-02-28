@@ -48,7 +48,7 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 - **FIX:** Resolved TypeScript build errors that were causing a blank screen on start (missing `checkCollision`, unused `lives`, `undefined` check on `enemy.vx`).
 
 ## Pending Tasks / Ideas
-- [ ] **Feel:** Implement Coyote Time and Jump Buffering.
+- [x] **Feel:** Implement Coyote Time and Jump Buffering.
 - [ ] **Architecture:** Refactor `App.tsx` into specialized modules (Physics, Rendering, State).
 - [ ] **Visuals:** Add Neon Glow (shadowBlur) and Parallax background layers.
 - [ ] **Content:** Add a "Double Jump" power-up.

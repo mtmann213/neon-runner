@@ -166,7 +166,8 @@ const GameCanvas: React.FC = () => {
     const player = {
       x: 50, y: 100, width: 40, height: 60, vx: 0, vy: 0,
       isGrounded: false, isRolling: false, rollTimer: 0,
-      invincibilityFrames: 0, speedBoostTimer: 0, facingRight: true
+      invincibilityFrames: 0, speedBoostTimer: 0, facingRight: true,
+      coyoteTimer: 0, jumpBufferTimer: 0
     };
 
     const keys: { [key: string]: boolean } = {};
@@ -174,6 +175,7 @@ const GameCanvas: React.FC = () => {
         keys[e.code] = true;
         if (e.code === 'ArrowRight') player.facingRight = true;
         if (e.code === 'ArrowLeft') player.facingRight = false;
+        if (e.code === 'Space') player.jumpBufferTimer = 10; // 10 frames of buffer
     };
     const handleKeyUp = (e: KeyboardEvent) => keys[e.code] = false;
     window.addEventListener('keydown', handleKeyDown);
@@ -290,9 +292,18 @@ const GameCanvas: React.FC = () => {
         player.vx = 0;
         if (keys['ArrowLeft']) player.vx = -moveSpeed;
         if (keys['ArrowRight']) player.vx = moveSpeed;
-        if (keys['Space'] && player.isGrounded) {
-          player.vy = jumpStrength; player.isGrounded = false;
-          createParticles(player.x + 20, groundY, '#7d5c34', 8, 2);
+
+        // --- JUMP LOGIC (With Coyote Time & Buffering) ---
+        if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
+        if (player.isGrounded) player.coyoteTimer = 6; // 6 frames of grace
+        else if (player.coyoteTimer > 0) player.coyoteTimer--;
+
+        if (player.jumpBufferTimer > 0 && player.coyoteTimer > 0) {
+          player.vy = jumpStrength;
+          player.isGrounded = false;
+          player.coyoteTimer = 0;
+          player.jumpBufferTimer = 0;
+          createParticles(player.x + 20, player.y + currentHeight, '#7d5c34', 8, 2);
           if (audioEnabled) audioManager.playJump();
         }
       }
