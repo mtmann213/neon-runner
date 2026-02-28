@@ -160,13 +160,25 @@ const GameCanvas: React.FC = () => {
 
     const onPlayerDamage = () => {
         if (player.invincibilityFrames > 0 || player.giantTimer > 0) return;
-        livesRef.current--;
-        player.invincibilityFrames = 60;
 
+        if (player.bigTimer > 0) {
+            // Lose Big state instead of a life
+            player.bigTimer = 0;
+            player.invincibilityFrames = 60;
+            createParticles(player.x + player.width/2, player.y + player.height/2, '#ff9999', 20, 4);
+            startShake(15, 8);
+            if (audioEnabled) audioManager.playDamage();
+            return;
+        }
+
+        livesRef.current--;
+        setLivesState(livesRef.current);
+        player.invincibilityFrames = 60;
         createParticles(player.x + player.width/2, player.y + player.height/2, '#3498db', 10, 3);
         startShake(20, 10);
         if (audioEnabled) audioManager.playDamage();
         if (livesRef.current <= 0) {
+
             gameStateRef.current = 'gameover';
             setGameState('gameover');
             if (scoreRef.current > highScore) {
