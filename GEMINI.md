@@ -39,11 +39,11 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
   - Added Victory Screen for clearing a level.
   - Added Game Over screen with Retry functionality.
   - Reaching the red flag at the end of the world now triggers the level clear.
-- **NEW:** Floating Platforms and Treasure Blocks.
-  - One-way platforms (can jump through from below/sides, land on top).
-  - Solid Treasure blocks with head-bump mechanic ($).
-  - Adjusted level design for better accessibility (platforms are reachable).
-  - Added "Coin" sound effect for hitting blocks.
+- **NEW:** Level 3 with Boss Fight.
+  - Introduced a "Boss" enemy type with 3 HP and unique jumping AI.
+  - Added Boss health bar and custom visuals.
+  - Added "Boss Hit" sound effect.
+  - Defeating the boss grants a massive score bonus (1000 pts).
 - **FIX:** Added `retryKey` and `currentLevel` to `useEffect` dependency array so "Next Level" and "Retry" actually reload the game loop.
 - **FIX:** Resolved TypeScript build errors that were causing a blank screen on start (missing `checkCollision`, unused `lives`, `undefined` check on `enemy.vx`).
 

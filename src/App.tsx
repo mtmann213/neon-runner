@@ -67,6 +67,36 @@ const GameCanvas: React.FC = () => {
             { x: 1150, y: 240, w: 40, h: 40, hit: false },
             { x: 1450, y: 160, w: 40, h: 40, hit: false },
         ]
+      },
+      {
+        worldWidth: 8000,
+        enemies: [
+          { id: 11, x: 1000, y: 0, w: 40, h: 40, vx: 5, type: 'patrol', color: '#e74c3c', alive: true },
+          { id: 12, x: 2000, y: 0, w: 60, h: 40, type: 'spikes', color: '#2c3e50', alive: true },
+          { id: 13, x: 3000, y: 0, w: 40, h: 40, vx: 6, type: 'patrol', color: '#e74c3c', alive: true },
+          { id: 14, x: 4500, y: 0, w: 80, h: 40, type: 'spikes', color: '#2c3e50', alive: true },
+          // The Boss
+          { id: 100, x: 7000, y: 0, w: 100, h: 100, vx: 4, vy: 0, type: 'boss', hp: 3, maxHp: 3, color: '#9b59b6', alive: true, lastJump: 0 }
+        ],
+        chests: [
+          { x: 1500, y: 0, w: 40, h: 40, type: 'speed', open: false },
+          { x: 3500, y: 0, w: 40, h: 40, type: 'health', open: false },
+          { x: 5500, y: 0, w: 40, h: 40, type: 'health', open: false },
+          { x: 6500, y: 0, w: 40, h: 40, type: 'speed', open: false }
+        ],
+        platforms: [
+            { x: 800, y: 420, w: 120, h: 20 },
+            { x: 1100, y: 340, w: 120, h: 20 },
+            { x: 1400, y: 260, w: 120, h: 20 },
+            { x: 4000, y: 350, w: 300, h: 20 },
+            { x: 4400, y: 250, w: 300, h: 20 },
+        ],
+        blocks: [
+            { x: 1150, y: 240, w: 40, h: 40, hit: false },
+            { x: 1450, y: 160, w: 40, h: 40, hit: false },
+            { x: 4150, y: 200, w: 40, h: 40, hit: false },
+            { x: 4550, y: 100, w: 40, h: 40, hit: false },
+        ]
       }
   ];
 
@@ -89,7 +119,7 @@ const GameCanvas: React.FC = () => {
     // Load Level Data
     const level = LEVELS[currentLevel] || LEVELS[0];
     const worldWidth = level.worldWidth;
-    let enemies = level.enemies.map(e => ({ ...e, y: groundY - e.h }));
+    let enemies = level.enemies.map(e => ({ ...e, y: groundY - e.h, vy: 0 }));
     let chests = level.chests.map(c => ({ ...c, y: groundY - c.h }));
     let platforms = level.platforms || [];
     let blocks = (level.blocks || []).map(b => ({ ...b }));
@@ -189,11 +219,25 @@ const GameCanvas: React.FC = () => {
                 ctx.beginPath(); ctx.moveTo(i * 20, e.h); ctx.lineTo(i * 20 + 10, 0); ctx.lineTo(i * 20 + 20, e.h); ctx.fill();
             }
         } else {
-            ctx.fillStyle = '#e74c3c'; ctx.fillRect(0, 0, e.w, e.h);
-            ctx.fillStyle = 'white'; ctx.fillRect(5, 10, 12, 12); ctx.fillRect(23, 10, 12, 12);
-            ctx.fillStyle = 'black'; ctx.fillRect(10, 15, 4, 4); ctx.fillRect(28, 15, 4, 4);
-            const step = Math.sin(frameCount * 0.2) * 5;
-            ctx.fillStyle = '#c0392b'; ctx.fillRect(5, 35, 10, 5 + step); ctx.fillRect(25, 35, 10, 5 - step);
+            ctx.fillStyle = e.color || '#e74c3c'; ctx.fillRect(0, 0, e.w, e.h);
+            
+            // Boss details
+            if (e.type === 'boss') {
+              ctx.fillStyle = 'white'; ctx.fillRect(10, 20, 30, 30); ctx.fillRect(60, 20, 30, 30);
+              ctx.fillStyle = 'black'; ctx.fillRect(20, 30, 10, 10); ctx.fillRect(70, 30, 10, 10);
+              // Teeth
+              ctx.fillStyle = 'white'; ctx.fillRect(20, 70, 60, 10);
+              // HP Bar
+              if (e.hp !== undefined && e.maxHp !== undefined) {
+                  ctx.fillStyle = 'red'; ctx.fillRect(0, -20, e.w, 10);
+                  ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, -20, e.w * (e.hp / e.maxHp), 10);
+              }
+            } else {
+              ctx.fillStyle = 'white'; ctx.fillRect(5, 10, 12, 12); ctx.fillRect(23, 10, 12, 12);
+              ctx.fillStyle = 'black'; ctx.fillRect(10, 15, 4, 4); ctx.fillRect(28, 15, 4, 4);
+              const step = Math.sin(frameCount * 0.2) * 5;
+              ctx.fillStyle = '#c0392b'; ctx.fillRect(5, 35, 10, 5 + step); ctx.fillRect(25, 35, 10, 5 - step);
+            }
         }
         ctx.restore();
     };
@@ -332,18 +376,51 @@ const GameCanvas: React.FC = () => {
 
       enemies.forEach(enemy => {
           if (!enemy.alive) return;
+          
           if (enemy.type === 'patrol' && enemy.vx !== undefined) {
               enemy.x += enemy.vx;
-              if (enemy.x > enemy.id * 800 + 400 || enemy.x < enemy.id * 800 - 400) enemy.vx *= -1;
+              if (enemy.x > (enemy.id < 100 ? enemy.id * 800 + 400 : 8000) || enemy.x < (enemy.id < 100 ? enemy.id * 800 - 400 : 0)) enemy.vx *= -1;
+          } else if (enemy.type === 'boss' && enemy.vx !== undefined && enemy.vy !== undefined) {
+              // Boss AI: Move towards player and jump
+              if (player.x < enemy.x) enemy.vx = -Math.abs(enemy.vx);
+              else enemy.vx = Math.abs(enemy.vx);
+
+              enemy.x += enemy.vx;
+              enemy.vy += gravity;
+              enemy.y += enemy.vy;
+
+              if (enemy.y + enemy.h > groundY) {
+                  enemy.y = groundY - enemy.h;
+                  enemy.vy = 0;
+                  // Jump occasionally
+                  if (frameCount - (enemy.lastJump || 0) > 120) {
+                      enemy.vy = -12;
+                      enemy.lastJump = frameCount;
+                  }
+              }
           }
+
           if (rectIntersect(player, enemy)) {
               if (player.vy > 0 && player.y < enemy.y && enemy.type !== 'spikes') {
-                  enemy.alive = false; player.vy = -8; 
-                  scoreRef.current += 50; setScore(scoreRef.current);
-                  createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
-                  startShake(15, 5); // Medium shake for kill
-                  if (audioEnabled) audioManager.playBop();
-              } else if (player.isRolling && enemy.type !== 'spikes') {
+                  // Bop!
+                  if (enemy.type === 'boss' && enemy.hp !== undefined) {
+                      enemy.hp--;
+                      player.vy = -12; // Big bounce
+                      startShake(20, 8);
+                      if (audioEnabled) audioManager.playBossHit();
+                      createParticles(enemy.x + enemy.w/2, enemy.y + enemy.h/2, '#9b59b6', 20, 4);
+                      if (enemy.hp <= 0) {
+                          enemy.alive = false;
+                          scoreRef.current += 1000; setScore(scoreRef.current);
+                      }
+                  } else {
+                      enemy.alive = false; player.vy = -8; 
+                      scoreRef.current += 50; setScore(scoreRef.current);
+                      createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
+                      startShake(15, 5); // Medium shake for kill
+                      if (audioEnabled) audioManager.playBop();
+                  }
+              } else if (player.isRolling && enemy.type !== 'spikes' && enemy.type !== 'boss') {
                   enemy.alive = false; 
                   scoreRef.current += 50; setScore(scoreRef.current);
                   createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);

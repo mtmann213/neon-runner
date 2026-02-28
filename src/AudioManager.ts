@@ -126,6 +126,22 @@ class AudioManager {
     osc.stop(this.ctx.currentTime + 0.1);
   }
 
+  public playBossHit() {
+    this.init();
+    if (!this.ctx || !this.sfxGain) return;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.3);
+    g.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+    osc.connect(g);
+    g.connect(this.sfxGain);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.3);
+  }
+
   // --- Procedural Synthwave Music ---
 
   public startMusic() {
