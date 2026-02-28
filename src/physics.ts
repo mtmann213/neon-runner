@@ -145,13 +145,29 @@ export const updatePlayer = (
         player.vx = 0;
         if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed;
         if (keys['ArrowRight']) player.vx = effectiveMoveSpeed;
+
         if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
+        
         if (player.isGrounded) {
             player.coyoteTimer = 6;
             player.canDoubleJump = true;
         } else if (player.coyoteTimer > 0) {
             player.coyoteTimer--;
         }
+
+        // Wall Jump Check
+        let onWall = false;
+        let wallDir = 0; // 1 for right wall, -1 for left
+        if (!player.isGrounded && !isGiant) {
+            blocks.forEach(b => {
+                if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
+                    if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
+                    else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
+                }
+            });
+        }
+        player.isWallSliding = onWall && player.vy > 0;
+
         if (player.jumpBufferTimer > 0) {
             if (player.coyoteTimer > 0) {
                 player.vy = effectiveJumpStrength;
@@ -161,6 +177,15 @@ export const updatePlayer = (
                 createParticles(player.x + player.width/2, player.y + currentHeight, '#7d5c34', 8, 2);
                 if (audioEnabled) audioManager.playJump();
             } 
+            else if (player.isWallSliding) {
+                player.vy = effectiveJumpStrength;
+                player.vx = -wallDir * 8; // Kick off wall
+                player.facingRight = wallDir === -1;
+                player.jumpBufferTimer = 0;
+                player.canDoubleJump = true; // Reset double jump on wall jump
+                createParticles(player.x + (wallDir === 1 ? player.width : 0), player.y + currentHeight/2, '#00ffff', 10, 2);
+                if (audioEnabled) audioManager.playJump();
+            }
             else if (player.canDoubleJump) {
                 player.vy = effectiveJumpStrength * 0.9;
                 player.canDoubleJump = false;
@@ -174,7 +199,10 @@ export const updatePlayer = (
         if (player.rollTimer <= 0) player.isRolling = false;
     }
 
-    player.vy += gravity;
+    // Apply gravity (slower when wall sliding)
+    player.vy += (player.isWallSliding ? gravity * 0.3 : gravity);
+    
+    // X Movement & Collision
     player.x += player.vx;
     if (!isGiant) {
         blocks.forEach(obj => {
@@ -186,9 +214,11 @@ export const updatePlayer = (
         });
     }
 
+    // Y Movement & Collision
     const prevY = player.y;
     player.y += player.vy;
     player.isGrounded = false;
+
     if (player.y + currentHeight > groundY) {
         player.y = groundY - currentHeight;
         player.vy = 0;
@@ -228,8 +258,7 @@ export const updatePlayer = (
         blocks.forEach(obj => {
             if (!obj.hit && rectIntersect(player, obj)) {
                 obj.hit = true;
-                scoreRef.current += 200;
-                setScore(scoreRef.current);
+                scoreRef.current += 200; setScore(scoreRef.current);
                 createParticles(obj.x + obj.w/2, obj.y, '#f1c40f', 10, 2);
                 startShake(8, 4);
                 if (audioEnabled) audioManager.playCoin();
@@ -254,7 +283,6 @@ export const updatePlayer = (
         }
     });
 
-    // Warp Detection
     (level.warps || []).forEach(warp => {
         if (rectIntersect(player, warp)) {
             onWarp(warp);
@@ -344,8 +372,7 @@ export const updateEnemies = (
         if (rectIntersect(player, enemy)) {
             if (player.giantTimer > 0) {
                 enemy.alive = false;
-                scoreRef.current += 100;
-                setScore(scoreRef.current);
+                scoreRef.current += 100; setScore(scoreRef.current);
                 createParticles(enemy.x + enemy.w/2, enemy.y + enemy.h/2, enemy.color || '#ff00ff', 30, 6);
                 startShake(10, 5);
                 if (audioEnabled) audioManager.playBop();
@@ -361,22 +388,18 @@ export const updateEnemies = (
                     createParticles(enemy.x + enemy.w/2, enemy.y + enemy.h/2, '#9b59b6', 20, 4);
                     if (enemy.hp <= 0) {
                         enemy.alive = false;
-                        scoreRef.current += 1000;
-                        setScore(scoreRef.current);
+                        scoreRef.current += 1000; setScore(scoreRef.current);
                     }
                 } else {
-                    enemy.alive = false;
-                    player.vy = -8;
-                    scoreRef.current += 50;
-                    setScore(scoreRef.current);
+                    enemy.alive = false; player.vy = -8; 
+                    scoreRef.current += 50; setScore(scoreRef.current);
                     createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                     startShake(15, 5);
                     if (audioEnabled) audioManager.playBop();
                 }
             } else if (player.isRolling && enemy.type !== 'spikes' && enemy.type !== 'boss') {
                 enemy.alive = false;
-                scoreRef.current += 50;
-                setScore(scoreRef.current);
+                scoreRef.current += 50; setScore(scoreRef.current);
                 createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                 startShake(15, 5);
                 if (audioEnabled) audioManager.playBop();

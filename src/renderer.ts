@@ -22,14 +22,24 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
     
     ctx.shadowBlur = p.giantTimer > 0 ? 40 : 15;
     ctx.shadowColor = p.giantTimer > 0 ? '#f1c40f' : (p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1'));
+if (p.invincibilityFrames % 10 < 5) {
+    if (p.isRolling) {
+        ctx.fillStyle = '#f1c40f'; 
+        ctx.beginPath(); 
+        ctx.arc(p.width/2, p.height/2, p.width/2, 0, Math.PI * 2); 
+        ctx.fill();
+    } else if (p.isWallSliding) {
+        // Wall slide pose
+        ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
+        ctx.fillRect(p.width*0.1, p.height*0.2, p.width*0.6, p.height*0.6);
+        ctx.fillStyle = '#f3e5ab';
+        ctx.fillRect(p.width*0.2, p.height*0.05, p.width*0.4, p.height*0.2);
+        // Limb pressed against wall
+        ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(p.width*0.7, p.height*0.3); ctx.lineTo(p.width*0.9, p.height*0.2); ctx.stroke();
+    } else {
+        // Body
 
-    if (p.invincibilityFrames % 10 < 5) {
-        if (p.isRolling) {
-            ctx.fillStyle = '#f1c40f'; 
-            ctx.beginPath(); 
-            ctx.arc(p.width/2, p.height/2, p.width/2, 0, Math.PI * 2); 
-            ctx.fill();
-        } else {
             if (p.giantTimer > 0) {
                 ctx.fillStyle = `hsl(${frameCount * 5 % 360}, 70%, 50%)`;
             } else {

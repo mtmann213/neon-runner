@@ -130,4 +130,5 @@ export interface Player {
   coyoteTimer: number;
   jumpBufferTimer: number;
   canDoubleJump: boolean;
+  isWallSliding: boolean;
 }
