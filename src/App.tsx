@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { audioManager } from './AudioManager';
-import { Player, Enemy, Chest, Platform, Block, Particle } from './types';
+import type { Player, Enemy, Chest, Platform, Block, Particle } from './types';
 import { LEVELS } from './levels';
 import { updatePlayer, updateEnemies, rectIntersect } from './physics';
 import * as Renderer from './renderer';
@@ -103,7 +103,6 @@ const GameCanvas: React.FC = () => {
       if (player.invincibilityFrames > 0) player.invincibilityFrames--;
       if (player.speedBoostTimer > 0) { player.speedBoostTimer--; moveSpeed = 8; } else { moveSpeed = 5; }
 
-      const currentHeight = player.isRolling ? 30 : 60;
       if (player.x > worldWidth - 120) {
         gameStateRef.current = 'won';
         setGameState('won');

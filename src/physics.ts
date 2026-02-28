@@ -1,4 +1,4 @@
-import { Player, Enemy, Platform, Block, Chest, Particle } from './types';
+import type { Player, Enemy, Platform, Block } from './types';
 import { audioManager } from './AudioManager';
 
 export const rectIntersect = (r1: any, r2: any) => {

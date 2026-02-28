@@ -1,4 +1,4 @@
-import { Player, Enemy, Chest, Platform, Block, Particle } from './types';
+import type { Player, Enemy } from './types';
 
 export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
     ctx.fillStyle = '#e74c3c'; ctx.beginPath();
