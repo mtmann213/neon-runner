@@ -1,4 +1,4 @@
-import type { Player, Enemy, Prize, BackgroundLayer, Fireball, EnemyProjectile } from './types';
+import type { Player, Enemy, Prize, BackgroundLayer, Fireball, EnemyProjectile, Warp } from './types';
 
 export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
     ctx.save();

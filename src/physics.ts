@@ -115,7 +115,8 @@ export const updatePlayer = (
     startShake: (d: number, i: number) => void,
     onWarp: (warp: Warp) => void
 ) => {
-    const { platforms, blocks, prizes } = level;
+    const { platforms, blocks } = level;
+    const prizes = level.prizes || [];
 
     if (player.invincibilityFrames > 0) player.invincibilityFrames--;
     if (player.speedBoostTimer > 0) player.speedBoostTimer--;

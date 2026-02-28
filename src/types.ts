@@ -107,6 +107,7 @@ export interface Level {
   blocks: Block[];
   bgLayers: BackgroundLayer[];
   warps?: Warp[];
+  prizes?: Prize[];
 }
 
 export interface Player {
