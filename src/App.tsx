@@ -176,7 +176,7 @@ const GameCanvas: React.FC = () => {
           ctx.translate(dx, dy);
       }
 
-      Renderer.drawBackground(ctx, canvas, cameraX, groundY, mountains, clouds);
+      Renderer.drawBackground(ctx, canvas, cameraX, groundY, level.bgLayers);
 
       ctx.save(); ctx.translate(-cameraX, 0);
       ctx.fillStyle = '#7d5c34'; ctx.fillRect(0, groundY, worldWidth, canvas.height - groundY);

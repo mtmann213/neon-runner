@@ -1,6 +1,9 @@
-import type { Player, Enemy, Prize } from './types';
+import type { Player, Enemy, Prize, BackgroundLayer } from './types';
 
 export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
+    ctx.save();
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#e74c3c';
     ctx.fillStyle = '#e74c3c'; ctx.beginPath();
     ctx.moveTo(x, y + size / 4);
     ctx.quadraticCurveTo(x, y, x + size / 4, y);
@@ -9,6 +12,7 @@ export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, s
     ctx.quadraticCurveTo(x + size, y, x + size, y + size / 4);
     ctx.quadraticCurveTo(x + size, y + size / 2, x + size / 2, y + size);
     ctx.quadraticCurveTo(x, y + size / 2, x, y + size / 4); ctx.fill();
+    ctx.restore();
 };
 
 export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: number) => {
@@ -16,6 +20,10 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
     ctx.save();
     if (!p.facingRight) { ctx.translate(p.x + p.width, p.y); ctx.scale(-1, 1); } else { ctx.translate(p.x, p.y); }
     
+    // Neon Glow
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#2980b9');
+
     if (p.invincibilityFrames % 10 < 5) {
         if (p.isRolling) {
             ctx.fillStyle = '#f1c40f'; 
@@ -48,8 +56,13 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
 export const drawEnemy = (ctx: CanvasRenderingContext2D, e: Enemy, frameCount: number) => {
     if (!e.alive) return;
     ctx.save(); ctx.translate(e.x, e.y);
+    
+    // Neon Glow for enemies
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = e.color || '#ff00ff';
+
     if (e.type === 'spikes') {
-        ctx.fillStyle = '#2c3e50';
+        ctx.fillStyle = e.color || '#2c3e50';
         for (let i = 0; i < e.w / 20; i++) {
             ctx.beginPath(); ctx.moveTo(i * 20, e.h); ctx.lineTo(i * 20 + 10, 0); ctx.lineTo(i * 20 + 20, e.h); ctx.fill();
         }
@@ -78,22 +91,35 @@ export const drawBackground = (
     canvas: HTMLCanvasElement,
     cameraX: number,
     groundY: number,
-    mountains: any[],
-    clouds: any[]
+    layers?: BackgroundLayer[]
 ) => {
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
-    skyGrad.addColorStop(0, '#87CEEB'); skyGrad.addColorStop(1, '#E0F6FF');
-    ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvas.width, groundY);
-    ctx.fillStyle = '#95a5a6';
-    mountains.forEach(m => {
-        ctx.beginPath(); ctx.moveTo(m.x - cameraX * 0.2, groundY);
-        ctx.lineTo(m.x + m.w/2 - cameraX * 0.2, groundY - m.h);
-        ctx.lineTo(m.x + m.w - cameraX * 0.2, groundY); ctx.fill();
-    });
-    ctx.fillStyle = 'white';
-    clouds.forEach(c => {
-        ctx.beginPath(); ctx.arc(c.x - cameraX * 0.1, c.y, c.size, 0, Math.PI * 2); ctx.fill();
-    });
+    // Background fill (base sky)
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (layers) {
+        layers.forEach(layer => {
+            ctx.fillStyle = layer.color;
+            const xOffset = -(cameraX * layer.speed) % 400;
+            
+            // Procedural shapes based on seed
+            for (let i = -1; i < (canvas.width / 400) + 1; i++) {
+                const x = i * 400 + xOffset;
+                const h = layer.height;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, groundY);
+                ctx.lineTo(x + 200, groundY - h);
+                ctx.lineTo(x + 400, groundY);
+                ctx.fill();
+            }
+        });
+    } else {
+        // Fallback
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+        skyGrad.addColorStop(0, '#1a1a2e'); skyGrad.addColorStop(1, '#16213e');
+        ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvas.width, groundY);
+    }
 };
 
 export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
@@ -101,6 +127,8 @@ export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
         if (p.collected) return;
         ctx.save();
         ctx.translate(p.x, p.y);
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#f1c40f';
         
         if (p.type === 'bacon') {
             ctx.fillStyle = '#ff9999'; ctx.fillRect(0, 5, 30, 10);

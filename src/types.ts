@@ -61,12 +61,20 @@ export interface Prize {
   collected: boolean;
 }
 
+export interface BackgroundLayer {
+  color: string;
+  speed: number;
+  height: number;
+  seed: number;
+}
+
 export interface Level {
   worldWidth: number;
   enemies: Omit<Enemy, 'y' | 'alive'>[];
   chests: Chest[];
   platforms: Platform[];
   blocks: Block[];
+  bgLayers?: BackgroundLayer[];
 }
 
 export interface Player {
