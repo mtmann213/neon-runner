@@ -145,19 +145,17 @@ export const updatePlayer = (
         player.vx = 0;
         if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed;
         if (keys['ArrowRight']) player.vx = effectiveMoveSpeed;
-
         if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
-        
         if (player.isGrounded) {
             player.coyoteTimer = 6;
-            player.canDoubleJump = true;
+            player.airJumpsLeft = 10;
         } else if (player.coyoteTimer > 0) {
             player.coyoteTimer--;
         }
 
         // Wall Jump Check
         let onWall = false;
-        let wallDir = 0; // 1 for right wall, -1 for left
+        let wallDir = 0; 
         if (!player.isGrounded && !isGiant) {
             blocks.forEach(b => {
                 if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
@@ -179,16 +177,16 @@ export const updatePlayer = (
             } 
             else if (player.isWallSliding) {
                 player.vy = effectiveJumpStrength;
-                player.vx = -wallDir * 8; // Kick off wall
+                player.vx = -wallDir * 8;
                 player.facingRight = wallDir === -1;
                 player.jumpBufferTimer = 0;
-                player.canDoubleJump = true; // Reset double jump on wall jump
+                player.airJumpsLeft = 10;
                 createParticles(player.x + (wallDir === 1 ? player.width : 0), player.y + currentHeight/2, '#00ffff', 10, 2);
                 if (audioEnabled) audioManager.playJump();
             }
-            else if (player.canDoubleJump) {
+            else if (player.airJumpsLeft > 0) {
                 player.vy = effectiveJumpStrength * 0.9;
-                player.canDoubleJump = false;
+                player.airJumpsLeft--;
                 player.jumpBufferTimer = 0;
                 createParticles(player.x + player.width/2, player.y + currentHeight, '#00ffff', 12, 3);
                 if (audioEnabled) audioManager.playJump();
@@ -199,10 +197,7 @@ export const updatePlayer = (
         if (player.rollTimer <= 0) player.isRolling = false;
     }
 
-    // Apply gravity (slower when wall sliding)
     player.vy += (player.isWallSliding ? gravity * 0.3 : gravity);
-    
-    // X Movement & Collision
     player.x += player.vx;
     if (!isGiant) {
         blocks.forEach(obj => {
@@ -214,11 +209,9 @@ export const updatePlayer = (
         });
     }
 
-    // Y Movement & Collision
     const prevY = player.y;
     player.y += player.vy;
     player.isGrounded = false;
-
     if (player.y + currentHeight > groundY) {
         player.y = groundY - currentHeight;
         player.vy = 0;

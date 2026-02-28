@@ -129,6 +129,6 @@ export interface Player {
   facingRight: boolean;
   coyoteTimer: number;
   jumpBufferTimer: number;
-  canDoubleJump: boolean;
+  airJumpsLeft: number;
   isWallSliding: boolean;
 }

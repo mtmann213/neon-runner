@@ -111,7 +111,8 @@ const GameCanvas: React.FC = () => {
       isGrounded: false, isRolling: false, rollTimer: 0,
       invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
       giantTimer: 0, fireballTimer: 0,
-      facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0, canDoubleJump: true,
+      facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0, airJumpsLeft: 10, 
+      canDoubleJump: true,
       isWallSliding: false
     };
 
