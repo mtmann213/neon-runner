@@ -252,6 +252,11 @@ export const updatePlayer = (
     if (isFlying && player.vy > 2) player.vy = 2;
 
     player.x += player.vx;
+    
+    // World Boundaries (Horizontal)
+    if (player.x < 0) player.x = 0;
+    if (player.x > level.worldWidth - player.width) player.x = level.worldWidth - player.width;
+
     if (!isGiant) {
         blocks.forEach(obj => {
             if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
@@ -264,6 +269,13 @@ export const updatePlayer = (
 
     const prevY = player.y;
     player.y += player.vy;
+
+    // World Boundaries (Top)
+    if (player.y < -500) {
+        player.y = -500;
+        player.vy = 0;
+    }
+
     player.isGrounded = false;
     if (player.y + currentHeight > groundY) {
         player.y = groundY - currentHeight;
