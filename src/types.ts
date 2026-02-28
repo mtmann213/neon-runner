@@ -101,6 +101,7 @@ export interface Player {
   speedBoostTimer: number;
   jumpBoostTimer: number;
   bigTimer: number;
+  fireballTimer: number;
   facingRight: boolean;
   coyoteTimer: number;
   jumpBufferTimer: number;

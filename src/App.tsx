@@ -77,6 +77,7 @@ const GameCanvas: React.FC = () => {
       x: 50, y: 100, width: 40, height: 60, vx: 0, vy: 0,
       isGrounded: false, isRolling: false, rollTimer: 0,
       invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
+      fireballTimer: 0,
       facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0, canDoubleJump: true
     };
 
@@ -87,15 +88,16 @@ const GameCanvas: React.FC = () => {
         if (e.code === 'ArrowLeft') player.facingRight = false;
         if (e.code === 'Space') player.jumpBufferTimer = 10;
         
-        if (e.code === 'KeyF' && gameStateRef.current === 'playing') {
+        if (e.code === 'KeyF' && gameStateRef.current === 'playing' && player.fireballTimer <= 0) {
             fireballs.push({
                 x: player.x + (player.facingRight ? player.width : -20),
                 y: player.y + player.height / 2 - 10,
                 vx: player.facingRight ? 10 : -10,
-                vy: -2, // Initial upward pop
+                vy: -2,
                 w: 20, h: 20,
                 active: true
             });
+            player.fireballTimer = 180; // 3 seconds @ 60fps
             if (audioEnabled) audioManager.playShoot();
         }
     };
@@ -225,6 +227,25 @@ const GameCanvas: React.FC = () => {
       ctx.restore();
       
       for (let i = 0; i < lives; i++) Renderer.drawHeart(ctx, 20 + i * 35, 20, 25);
+      
+      // Fireball Cooldown UI
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(20, 60, 100, 10);
+      if (player.fireballTimer <= 0) {
+          ctx.fillStyle = '#e67e22';
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = '#e67e22';
+          ctx.fillRect(20, 60, 100, 10);
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 12px Arial';
+          ctx.fillText('FIREBALL READY (F)', 20, 85);
+      } else {
+          ctx.fillStyle = '#555';
+          const width = 100 * (1 - player.fireballTimer / 180);
+          ctx.fillRect(20, 60, width, 10);
+      }
+      ctx.shadowBlur = 0;
+
       ctx.fillStyle = 'white'; ctx.font = 'bold 24px Arial'; 
       ctx.fillText(`Score: ${scoreRef.current}`, canvas.width - 150, 45);
 

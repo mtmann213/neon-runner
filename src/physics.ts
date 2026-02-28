@@ -116,6 +116,7 @@ export const updatePlayer = (
     if (player.speedBoostTimer > 0) player.speedBoostTimer--;
     if (player.jumpBoostTimer > 0) player.jumpBoostTimer--;
     if (player.bigTimer > 0) player.bigTimer--;
+    if (player.fireballTimer > 0) player.fireballTimer--;
 
     const currentHeight = player.isRolling ? 30 : (player.bigTimer > 0 ? 100 : 60);
     const currentWidth = player.bigTimer > 0 ? 60 : 40;
