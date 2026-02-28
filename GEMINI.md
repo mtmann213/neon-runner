@@ -50,7 +50,7 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 
 ## Pending Tasks / Ideas
 - [x] **Feel:** Implement Coyote Time and Jump Buffering.
-- [ ] **Architecture:** Refactor `App.tsx` into specialized modules (Physics, Rendering, State).
+- [x] **Architecture:** Refactor `App.tsx` into specialized modules (Physics, Rendering, State).
 - [ ] **Visuals:** Add Neon Glow (shadowBlur) and Parallax background layers.
 - [ ] **Content:** Add a "Double Jump" power-up.
 - [ ] **Polish:** Add a Main Menu and a "Game Clear" final screen.
