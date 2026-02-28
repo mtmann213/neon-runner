@@ -11,9 +11,13 @@ const GameCanvas: React.FC = () => {
   const [lives, setLives] = useState(3);
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [audioEnabled, setAudioEnabled] = useState(() => {
+      const saved = localStorage.getItem('neonRunnerAudio');
+      return saved === null ? true : saved === 'true';
+  });
   const [gameState, setGameState] = useState<'playing' | 'won' | 'gameover' | 'gameclear'>('playing');
   const [currentLevel, setCurrentLevel] = useState(0);
+  const [unlockedLevel, setUnlockedLevel] = useState(() => Number(localStorage.getItem('neonRunnerUnlockedLevel')) || 0);
   const [retryKey, setRetryKey] = useState(0);
   const [highScore, setHighScore] = useState(() => Number(localStorage.getItem('neonRunnerHighScore')) || 0);
   
@@ -123,6 +127,11 @@ const GameCanvas: React.FC = () => {
         } else {
             gameStateRef.current = 'won';
             setGameState('won');
+            const nextLevel = currentLevel + 1;
+            if (nextLevel > unlockedLevel) {
+                setUnlockedLevel(nextLevel);
+                localStorage.setItem('neonRunnerUnlockedLevel', nextLevel.toString());
+            }
         }
         return;
       }
@@ -289,7 +298,27 @@ const GameCanvas: React.FC = () => {
           
           <div className="high-score">HIGH SCORE: {highScore}</div>
 
-          <div className="audio-toggle" onClick={() => setAudioEnabled(!audioEnabled)}>
+          <div className="level-select">
+              <p>SELECT LEVEL</p>
+              <div className="level-buttons">
+                  {LEVELS.map((_, i) => (
+                      <button 
+                          key={i} 
+                          className={`lvl-btn ${currentLevel === i ? 'active' : ''} ${i > unlockedLevel ? 'locked' : ''}`}
+                          onClick={() => i <= unlockedLevel && setCurrentLevel(i)}
+                          disabled={i > unlockedLevel}
+                      >
+                          {i + 1} {i > unlockedLevel ? '🔒' : ''}
+                      </button>
+                  ))}
+              </div>
+          </div>
+
+          <div className="audio-toggle" onClick={() => {
+              const newState = !audioEnabled;
+              setAudioEnabled(newState);
+              localStorage.setItem('neonRunnerAudio', newState.toString());
+          }}>
             Audio: {audioEnabled ? '🔊 ON' : '🔇 OFF'}
           </div>
           <div className="controls-hint">

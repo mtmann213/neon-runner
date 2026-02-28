@@ -5,61 +5,34 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 
 ## Current State (as of 2026-02-27)
 - **Engine:** React + Vite + TypeScript.
-- **Rendering:** HTML5 Canvas API.
+- **Rendering:** HTML5 Canvas API with modular Architecture.
 - **Core Mechanics:**
-  - Horizontal movement (Arrow keys).
-  - Jumping (Space) with gravity.
-  - Rolling (Shift) for speed and dodging.
-  - Camera system (horizontal scrolling).
-  - Enemy types: Patrol (walks back and forth) and Spikes (stationary damage).
-  - Collectibles: Chests (Health/Speed boosts).
-  - Combat: Bop enemies from above or roll into them to defeat.
+  - Smooth horizontal movement and physics-based jumping.
+  - **Feel:** Coyote Time and Jump Buffering for tight controls.
+  - **Combat:** Fireball shooting (F key) with bouncing physics and 3s cooldown.
+  - **Power-ups:** Bacon (Big), Gold Carrot (Life), Lightning Shoes (Speed), Spring (Jump), Giant Burger (Giantic + Invincible).
 - **Juice Features:**
-  - Particle system (jump, land, roll, damage, death).
-  - Screen Shake (on damage, kill, chest open).
-  - Frame-based animations (simple walk cycle).
-  - Parallax-lite background (mountains and clouds).
-  - **NEW:** Procedural Synthwave Music and Sound Effects (Web Audio API).
-  - **NEW:** Start Game overlay to handle audio context initialization.
+  - Particle system, Screen Shake, Neon Glow effects.
+  - Parallax background layers and CRT/Scanline overlay.
+- **Progression:**
+  - 3 Levels including a multi-hit Boss fight in Level 3.
+  - **Persistence:** High scores, level unlocks, and audio settings saved to LocalStorage.
+  - **Level Select:** Choose starting level from the Main Menu.
 
 ## Recent Changes
-- Initialized Git repository.
-- Created `GEMINI.md` for session persistence.
-- Refined initial project structure.
-- Implemented `AudioManager.ts` for procedural sound.
-- Integrated audio triggers (jump, bop, damage, chest) into `App.tsx`.
-- Added `Start Game` overlay for audio activation.
-- **FIX:** Added `gameStarted` to `useEffect` dependency array so the game loop actually starts.
-- **FIX:** Added `audioManager.stopMusic()` to `useEffect` cleanup.
-- **IMPROVEMENT:** Hardened `AudioManager.ts` with try-catch and null checks for environments without audio drivers.
-- **IMPROVEMENT:** Added Audio ON/OFF toggle to the Start Overlay.
-- **NEW:** Level Progression System.
-  - Level data is now managed via a `LEVELS` configuration object.
-  - Added Game States: `playing`, `won`, `gameover`.
-  - Added Victory Screen for clearing a level.
-  - Added Game Over screen with Retry functionality.
-  - Reaching the red flag at the end of the world now triggers the level clear.
-- **NEW:** Level 3 with Boss Fight.
-  - Introduced a "Boss" enemy type with 3 HP and unique jumping AI.
-  - Added Boss health bar and custom visuals.
-  - Added "Boss Hit" sound effect.
-  - Defeating the boss grants a massive score bonus (1000 pts).
-- **FIX:** Added `retryKey` and `currentLevel` to `useEffect` dependency array so "Next Level" and "Retry" actually reload the game loop.
-- **FIX:** Resolved TypeScript build errors that were causing a blank screen on start (missing `checkCollision`, unused `lives`, `undefined` check on `enemy.vx`).
-- **FIX:** Resolved game freeze when jumping (ReferenceError: `currentHeight` used before initialization).
-- **FIX:** Resolved white screen after refactor by fixing `import type` syntax and removing unused variables.
-- **FIX:** Resolved white screen after Double Jump implementation by removing unused variables (`clouds`, `mountains`, `currentHeight`).
+- Implemented comprehensive persistence (Level unlocks + Audio settings).
+- Added Level Select UI to the start screen.
+- Fixed modular architecture and build errors.
+- Added Fireball mechanic and various Power-ups.
+- Enhanced visuals with Neon Glow and Parallax.
 
 ## Pending Tasks / Ideas
-- [x] **Feel:** Implement Coyote Time and Jump Buffering.
-- [x] **Architecture:** Refactor `App.tsx` into specialized modules (Physics, Rendering, State).
-- [x] **Visuals:** Add Neon Glow (shadowBlur), Parallax background layers, and CRT Scanline overlay.
-- [x] **Content:** Add a "Double Jump" mechanic (inherent or power-up).
-- [x] **Polish:** Add a Main Menu and a "Game Clear" final screen.
-- [x] **Persistence:** Save high scores to LocalStorage.
-
-- [ ] **Persistence:** Save high scores to LocalStorage.
+- [ ] **Content:** Add more enemy types (Flying drones, turrets).
+- [ ] **Visuals:** Add a "Ghost Trail" effect when moving fast.
+- [ ] **Architecture:** Implement an Entity Component System (ECS) for easier object management.
+- [ ] **Polish:** Add sound volume sliders and keyboard rebinding.
+- [ ] **World:** Add moving platforms or conveyor belts.
 
 ## Technical Debt / Known Issues
-- All game logic is currently in one large `App.tsx` file.
-- Needs better asset management (currently using primitives).
+- Physics logic is getting complex; might need a dedicated physics engine approach or cleaner state management.
+- Asset rendering is still procedural; could benefit from sprite sheet support.
