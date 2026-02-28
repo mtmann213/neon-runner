@@ -170,27 +170,12 @@ export const updatePlayer = (
         if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed * waterMoveReduction;
         if (keys['ArrowRight']) player.vx = effectiveMoveSpeed * waterMoveReduction;
         if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
-        
         if (player.isGrounded) {
             player.coyoteTimer = 6;
             player.airJumpsLeft = 1; 
         } else if (player.coyoteTimer > 0) {
             player.coyoteTimer--;
         }
-
-        // Wall Jump Check
-        let onWall = false;
-        let wallDir = 0; 
-        if (!player.isGrounded && !isGiant && !inWater) {
-            blocks.forEach(b => {
-                if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
-                    if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
-                    else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
-                }
-            });
-        }
-        player.isWallSliding = onWall && player.vy > 0;
-
         if (player.jumpBufferTimer > 0) {
             if (inWater) {
                 player.vy = -4;
@@ -226,6 +211,18 @@ export const updatePlayer = (
         player.rollTimer--;
         if (player.rollTimer <= 0) player.isRolling = false;
     }
+
+    let onWall = false;
+    let wallDir = 0; 
+    if (!player.isGrounded && !isGiant && !inWater) {
+        blocks.forEach(b => {
+            if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
+                if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
+                else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
+            }
+        });
+    }
+    player.isWallSliding = onWall && player.vy > 0;
 
     const waterGravityReduction = inWater ? 0.3 : 1.0;
     player.vy += (player.isWallSliding ? gravity * 0.3 : gravity * waterGravityReduction);
@@ -402,8 +399,12 @@ export const updateEnemies = (
                 if (audioEnabled) audioManager.playBop();
                 return;
             }
-            const prevPlayerBottom = player.y + player.height - player.vy;
-            if (player.vy > 0 && prevPlayerBottom <= enemy.y && enemy.type !== 'spikes') {
+
+            // --- HIT DETECTION (More forgiving for Bosses) ---
+            const bopThreshold = enemy.type === 'boss' ? enemy.h * 0.4 : 0; 
+            const isFallingOnTop = player.vy > 0 && (player.y + player.height - player.vy) <= (enemy.y + bopThreshold);
+
+            if (isFallingOnTop && enemy.type !== 'spikes') {
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {
                     enemy.hp--;
                     player.vy = -12;
@@ -415,10 +416,8 @@ export const updateEnemies = (
                         scoreRef.current += 1000; setScore(scoreRef.current);
                     }
                 } else {
-                    enemy.alive = false;
-                    player.vy = -8;
-                    scoreRef.current += 50;
-                    setScore(scoreRef.current);
+                    enemy.alive = false; player.vy = -8; 
+                    scoreRef.current += 50; setScore(scoreRef.current);
                     createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                     startShake(15, 5);
                     if (audioEnabled) audioManager.playBop();
