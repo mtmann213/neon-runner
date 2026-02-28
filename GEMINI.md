@@ -1,69 +1,43 @@
 # Project Resume: Neon Runner
 
 ## Project Overview
-A highly polished, React-based 2D Action Platformer focusing on "game juice," retro aesthetics, and deep procedural replayability. The game features infinite scaling levels, a robust combat system, and a variety of unique power-ups and environments.
+A React-based 2D Action Platformer with procedural generation, retro synthwave aesthetics, and polished "game juice."
 
 ## Technical Stack
-- **Framework:** React 19 + Vite
-- **Language:** TypeScript (Strict Typing)
-- **Rendering:** HTML5 Canvas 2D API (High DPI Scaled)
-- **Physics:** Custom Axis-Aligned Bounding Box (AABB) system with Axis Separation.
-- **Architecture:** Modularized into specialized units:
-  - `LevelGenerator.ts`: Chunk-based procedural generation.
-  - `physics.ts`: Core movement, collision, and AI logic.
-  - `renderer.ts`: HD gradient-based drawing and visual effects.
-  - `AudioManager.ts`: Procedural synthwave music and SFX.
+- **Framework:** React 19 + Vite + TypeScript.
+- **Rendering:** High DPI HTML5 Canvas.
+- **Modular Architecture:** Logic split into `physics.ts`, `renderer.ts`, `LevelGenerator.ts`, `AudioManager.ts`, and `types.ts`.
 
 ## Current State (as of 2026-02-27)
 
-### 1. Movement & Controls
-- **Feel:** Coyote Time (grace period), Jump Buffering (input memory).
-- **Abilities:** 
-  - Standard Walk/Run.
-  - Double Jump (Mid-air boost with cyan particles).
-  - Wall Slide & Wall Jump (Kick off blocks to gain height).
-  - Swimming (Floaty physics and manual flapping in water).
-  - Rolling (Shift to dash/dodge and kill normal enemies).
+### Core Mechanics
+- **Movement:** Standard walk, Double Jump (with cyan flash), Wall Slide & Wall Jump.
+- **Swimming:** Reduced gravity and manual "flapping" mechanics in Level 2 (Water Level).
+- **Flight:** Wing power-up enables 10s of flight with flapping animation.
+- **Combat:** Bouncing fireballs (F key) with 3s cooldown and UI progress bar.
+- **Giantic:** Burger power-up makes you massive (240x360), invincible, and able to walk through blocks.
+- **Big Mode:** Bacon makes you big permanently until you take damage (acts as a shield).
 
-### 2. Combat & Hazards
-- **Fireballs:** Press 'F' to shoot. Features gravity, ground/platform bouncing, and 3s cooldown with UI bar.
-- **Firebars:** Classic rotating fire chains that scale in length and speed.
-- **Enemies:**
-  - **Patrol:** Ground-based walking enemies.
-  - **Spikes:** Static ground hazards.
-  - **Flying Drones:** Airy enemies with sine-wave flight paths.
-  - **Turrets:** Stationary units that fire aimed projectiles at the player.
-  - **Bosses:** Massive 100x100 units spawning every 3rd level with scaling HP and jumping AI.
+### World & Hazards
+- **ProcGen:** Infinite procedural levels that scale in length and difficulty.
+- **Level 2:** Underwater theme with custom rendering (bubbles, surface, blue overlay).
+- **Hazards:** Rotating Firebars (scaling length/speed), Flying Drones, Turrets, and Bosses (every 3rd level).
+- **Secrets:** Neon purple doors lead to bonus rooms. Doors lock (turn grey with 'X') after one-use.
 
-### 3. Power-ups (Weighted Randomized Drops)
-- **Bacon:** Makes player "Big" (100px height) permanently (until hit or death).
+### Visuals & Juice
+- **Ghost Trail:** Fading afterimages when rolling, flying, or moving at high speeds.
+- **Glow:** Neon shadow blur on characters, enemies, and fireballs.
+- **CRT Effect:** Scanline and vignette overlay for a retro feel.
+- **Loading:** 5-second sequence featuring an accurate, spinning 3D N64 logo.
 
-- **Giant Burger:** Makes player "Giantic" (360px height), invincible, and able to walk through blocks.
-- **Wing:** Enables flight for 10 seconds (Hold Jump to flap).
-- **Gold Carrot:** Grants an extra permanent life.
-- **Lightning Shoes:** Increases move speed.
-- **Spring:** Increases jump height.
+## Recent Changes & Fixes
+- Implemented **Ghost Trail** effect.
+- Fixed **Jumping Freeze** in water levels by correcting variable initialization order.
+- Resolved **Warp Loop** by offsetting player position on bonus room exit.
+- Fixed **Damage Logic** and **Hearts UI** sync (now uses `livesRef.current`).
+- Cleaned up TypeScript errors and unified state management on the `Level` object.
 
-### 4. World & Secrets
-- **Procedural Levels:** Infinite generation using randomized chunks.
-- **Bonus Rooms:** Glowing purple doors lead to secret prize rooms. Doors lock visually after one-time use.
-- **Water Level:** Level 2 is a fully submerged environment with custom rendering (bubbles, surface lines).
-
-### 5. Polish & UI
-- **Visuals:** CRT/Scanline overlay, Vignette, Neon Glow (shadowBlur), HD Gradients.
-- **Loading:** 5-second startup with a mathematically accurate 3D spinning N64 logo.
-- **UI:** HUD with Heart icons, Fireball cooldown bar, Level Select menu, and High Score persistence.
-
-## Recent Changes
-- Overhauled static level system into an infinite Procedural Generator.
-- Implemented modular architecture for better maintainability.
-- Added 3D N64-style loading sequence.
-- Implemented Water physics and specialized character animations (moving arms).
-- Added secret bonus room logic with state persistence.
-- Refined boss collision to make "bopping" more forgiving.
-
-## Persistence
-- **LocalStorage Keys:**
-  - `neonRunnerHighScore`: Best score achieved.
-  - `neonRunnerUnlockedLevel`: Progress through procedural milestones.
-  - `neonRunnerAudio`: Sound preference toggle.
+## How to Resume
+1.  Check `PLAN.md` for the next phases (Moving Platforms, ECS refactor, dash ability).
+2.  All logic is stable and local build (`npm run build`) is passing.
+3.  The Git repo is initialized and has all these features committed.
