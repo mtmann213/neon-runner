@@ -3,12 +3,11 @@ import './App.css';
 import { audioManager } from './AudioManager';
 import type { Player, Enemy, Chest, Platform, Block, Particle, Prize, Fireball, EnemyProjectile, Level, Warp } from './types';
 import { generateLevel, generateBonusRoom, getRandomPrize } from './LevelGenerator';
-import { updatePlayer, updateEnemies, updatePrizes, updateFireballs, updateEnemyProjectiles, rectIntersect } from './physics';
+import { updatePlayer, updateEnemies, updatePrizes, updateFireballs, updateEnemyProjectiles, updateFirebars, rectIntersect } from './physics';
 import * as Renderer from './renderer';
 
 const GameCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [lives, setLives] = useState(3);
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,9 +23,9 @@ const GameCanvas: React.FC = () => {
   
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
+  const [livesState, setLivesState] = useState(3); // For UI triggering
   const gameStateRef = useRef<'playing' | 'won' | 'gameover' | 'gameclear'>('playing');
 
-  // Secret States
   const [isBonusRoom, setIsBonusRoom] = useState(false);
   const savedMainLevelRef = useRef<Level | null>(null);
   const savedPlayerPosRef = useRef<{x: number, y: number} | null>(null);
@@ -46,7 +45,6 @@ const GameCanvas: React.FC = () => {
     const rollSpeed = 10;
     const groundY = canvas.height - 100;
 
-    // --- LEVEL SELECTION ---
     let level: Level;
     if (isBonusRoom) {
         level = generateBonusRoom(groundY);
@@ -54,7 +52,6 @@ const GameCanvas: React.FC = () => {
         level = savedMainLevelRef.current || generateLevel(currentLevel, groundY);
     }
     
-    // Initialize persistent state arrays if they don't exist
     if (!level.prizes) level.prizes = [];
     if (!(level as any).fireballs) (level as any).fireballs = [];
     if (!(level as any).enemyProjectiles) (level as any).enemyProjectiles = [];
@@ -95,7 +92,6 @@ const GameCanvas: React.FC = () => {
     let frameCount = 0;
     let cameraX = 0;
     
-    // Determine player start pos
     let startX = 50;
     let startY = 100;
     if (isBonusRoom) {
@@ -112,7 +108,6 @@ const GameCanvas: React.FC = () => {
       invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
       giantTimer: 0, fireballTimer: 0,
       facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0, airJumpsLeft: 1, 
-      canDoubleJump: true,
       isWallSliding: false
     };
 
@@ -139,7 +134,6 @@ const GameCanvas: React.FC = () => {
 
     const onWarp = (warp: Warp) => {
         if (warp.target === 'bonus') {
-            // Save current state into the level object itself for persistence
             (level as any).prizes = prizes;
             (level as any).fireballs = fireballs;
             (level as any).enemyProjectiles = enemyProjectiles;
@@ -148,9 +142,7 @@ const GameCanvas: React.FC = () => {
             setIsBonusRoom(true);
             setRetryKey(prev => prev + 1);
         } else {
-            // Return to main
             if (savedPlayerPosRef.current) {
-                // Move player slightly to the left of where they entered the door
                 savedPlayerPosRef.current.x -= 100;
             }
             setIsBonusRoom(false);
@@ -161,7 +153,7 @@ const GameCanvas: React.FC = () => {
     const onPlayerDamage = () => {
         if (player.invincibilityFrames > 0 || player.giantTimer > 0) return;
         livesRef.current--;
-        setLives(livesRef.current);
+        setLivesState(livesRef.current);
         player.invincibilityFrames = 60;
         createParticles(player.x + player.width/2, player.y + player.height/2, '#3498db', 10, 3);
         startShake(20, 10);
@@ -206,7 +198,7 @@ const GameCanvas: React.FC = () => {
           if (audioEnabled) audioManager.playChest();
           if (prize.type === 'bacon') player.bigTimer = 600;
           else if (prize.type === 'burger') { player.giantTimer = 600; startShake(20, 10); }
-          else if (prize.type === 'carrot') { livesRef.current++; setLives(livesRef.current); }
+          else if (prize.type === 'carrot') { livesRef.current++; setLivesState(livesRef.current); }
           else if (prize.type === 'shoes') player.speedBoostTimer = 600;
           else if (prize.type === 'spring') player.jumpBoostTimer = 600;
       });
@@ -222,14 +214,12 @@ const GameCanvas: React.FC = () => {
               createParticles(chest.x + 20, chest.y + 20, '#f1c40f', 15, 4);
               startShake(10, 3);
               if (audioEnabled) audioManager.playChest();
-
               prizes.push({
                   x: chest.x + 5, y: chest.y - 20,
                   w: 30, h: 30, vx: (Math.random() - 0.5) * 2, vy: -5,
                   type: getRandomPrize(), collected: false
               });
-
-              if (chest.type === 'health') { livesRef.current++; setLives(livesRef.current); }
+              if (chest.type === 'health') { livesRef.current++; setLivesState(livesRef.current); }
               else if (chest.type === 'speed') player.speedBoostTimer = 300;
           }
       });
@@ -286,7 +276,7 @@ const GameCanvas: React.FC = () => {
       Renderer.drawFirebars(ctx, level.firebars || []);
       Renderer.drawEnemyProjectiles(ctx, enemyProjectiles);
       enemies.forEach(e => Renderer.drawEnemy(ctx, e, frameCount));
-      Renderer.drawBoy(ctx, player, frameCount);
+      Renderer.drawBoy(ctx, player, frameCount, level.waterLevel !== undefined && player.y + player.height/2 > level.waterLevel);
       ctx.restore();
       
       for (let i = 0; i < livesRef.current; i++) Renderer.drawHeart(ctx, 20 + i * 35, 20, 25);
@@ -324,7 +314,7 @@ const GameCanvas: React.FC = () => {
   }, [gameStarted, currentLevel, retryKey, isBonusRoom]);
 
   const resetGame = () => {
-      livesRef.current = 3; setLives(3);
+      livesRef.current = 3; setLivesState(3);
       scoreRef.current = 0; setScore(0);
       setIsBonusRoom(false);
       savedMainLevelRef.current = null;
@@ -379,7 +369,6 @@ const GameCanvas: React.FC = () => {
           <div className="loading-overlay">
               <div className="n64-container">
                   <div className="n64-logo-3d">
-                      {/* 4 Vertical Pillars */}
                       <div className="n-bar pillar p1">
                           <div className="f top"></div><div className="f bottom"></div>
                           <div className="f front"></div><div className="f back"></div>
@@ -400,7 +389,6 @@ const GameCanvas: React.FC = () => {
                           <div className="f front"></div><div className="f back"></div>
                           <div className="f side-left"></div><div className="f side-right"></div>
                       </div>
-                      {/* 4 Diagonals */}
                       <div className="n-bar diag d1">
                           <div className="f top"></div><div className="f bottom"></div>
                           <div className="f front"></div><div className="f back"></div>
@@ -443,6 +431,24 @@ const GameCanvas: React.FC = () => {
               <p>Score: {score}</p>
               <div className="high-score-mini">High Score: {highScore}</div>
               <button className="start-btn" onClick={resetGame}>RETRY</button>
+          </div>
+      )}
+
+      {gameState === 'gameclear' && (
+          <div className="state-overlay gameclear">
+              <h1>NEON CHAMPION</h1>
+              <p>YOU CLEARED ALL LEVELS!</p>
+              <div className="final-stats">
+                  <div>Final Score: {score}</div>
+                  <div>High Score: {highScore}</div>
+              </div>
+              <button className="start-btn" onClick={() => {
+                  livesRef.current = 3; setLivesState(3);
+                  scoreRef.current = 0; setScore(0);
+                  setCurrentLevel(0);
+                  setRetryKey(prev => prev + 1);
+                  setGameState('playing');
+              }}>PLAY AGAIN</button>
           </div>
       )}
 
