@@ -148,7 +148,7 @@ export const updatePlayer = (
         if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
         if (player.isGrounded) {
             player.coyoteTimer = 6;
-            player.airJumpsLeft = 10;
+            player.airJumpsLeft = 1; // Double Jump (1 extra air jump)
         } else if (player.coyoteTimer > 0) {
             player.coyoteTimer--;
         }
@@ -180,7 +180,7 @@ export const updatePlayer = (
                 player.vx = -wallDir * 8;
                 player.facingRight = wallDir === -1;
                 player.jumpBufferTimer = 0;
-                player.airJumpsLeft = 10;
+                player.airJumpsLeft = 1; // Reset air jumps on wall jump
                 createParticles(player.x + (wallDir === 1 ? player.width : 0), player.y + currentHeight/2, '#00ffff', 10, 2);
                 if (audioEnabled) audioManager.playJump();
             }
