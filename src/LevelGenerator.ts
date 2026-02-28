@@ -1,4 +1,4 @@
-import type { Level, Enemy, Chest, Platform, Block, BackgroundLayer, Warp } from './types';
+import type { Level, Enemy, Chest, Platform, Block, BackgroundLayer, Warp, Firebar } from './types';
 
 const LOOT_TABLE: ('bacon' | 'carrot' | 'shoes' | 'spring' | 'burger')[] = [
     'bacon', 'bacon', 'bacon', 'bacon', // 40%
@@ -45,7 +45,6 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
     const worldWidth = 5000 + (levelNumber * 2000);
     const palette = BG_PALETTES[levelNumber % BG_PALETTES.length];
     
-    // Level 2 (index 1) is a water level
     const isWaterLevel = levelNumber === 1;
     const waterLevel = isWaterLevel ? groundY - 300 : undefined;
 
@@ -60,6 +59,7 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
     const platforms: Platform[] = [];
     const blocks: Block[] = [];
     const warps: Warp[] = [];
+    const firebars: Firebar[] = [];
 
     let currentX = 800;
     let enemyId = 1;
@@ -73,12 +73,12 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
             currentX += 200;
         }
 
-        if (r < 0.3) {
+        if (r < 0.2) {
+            // Flat area with enemies
             const count = 1 + Math.floor(Math.random() * 3);
             for (let i = 0; i < count; i++) {
                 enemies.push({
-                    id: enemyId++,
-                    x: currentX + (i * 300), y: groundY - 40, w: 40, h: 40,
+                    id: enemyId++, x: currentX + (i * 300), y: groundY - 40, w: 40, h: 40,
                     vx: 2 + (levelNumber * 0.5),
                     type: (isWaterLevel || Math.random() > 0.7) ? 'flying' : 'patrol',
                     color: isWaterLevel ? '#00ffff' : '#ff00ff',
@@ -87,7 +87,8 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
                 });
             }
             currentX += 1000;
-        } else if (r < 0.6) {
+        } else if (r < 0.5) {
+            // Platforming section
             const platCount = 2 + Math.floor(Math.random() * 3);
             for (let i = 0; i < platCount; i++) {
                 const py = groundY - 100 - (i * 100);
@@ -98,7 +99,18 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
                 }
             }
             currentX += platCount * 250 + 200;
-        } else if (r < 0.8) {
+        } else if (r < 0.7) {
+            // Firebar section
+            blocks.push({ x: currentX, y: groundY - 200, w: 40, h: 40, hit: false });
+            firebars.push({
+                x: currentX + 20, y: groundY - 180,
+                angle: Math.random() * Math.PI * 2,
+                length: 4 + Math.floor(levelNumber / 2),
+                speed: 0.03 + (levelNumber * 0.01)
+            });
+            currentX += 600;
+        } else if (r < 0.85) {
+            // Hazard section
             enemies.push({
                 id: enemyId++, x: currentX, y: groundY - 40, w: 80 + Math.random() * 100, h: 40,
                 type: 'spikes', color: isWaterLevel ? '#48cae4' : '#00ffff', alive: true
@@ -127,5 +139,5 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
         });
     }
 
-    return { worldWidth, enemies, chests, platforms, blocks, bgLayers, warps, waterLevel };
+    return { worldWidth, enemies, chests, platforms, blocks, bgLayers, warps, waterLevel, firebars };
 };

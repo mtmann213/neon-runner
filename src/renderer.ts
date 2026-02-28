@@ -201,3 +201,24 @@ export const drawWarps = (ctx: CanvasRenderingContext2D, warps: Warp[]) => {
         ctx.restore();
     });
 };
+
+export const drawFirebars = (ctx: CanvasRenderingContext2D, firebars: Firebar[]) => {
+    firebars.forEach(bar => {
+        for (let i = 1; i <= bar.length; i++) {
+            const dist = i * 25;
+            const fx = bar.x + Math.cos(bar.angle) * dist;
+            const fy = bar.y + Math.sin(bar.angle) * dist;
+            
+            ctx.save();
+            ctx.translate(fx, fy);
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#e67e22';
+            ctx.fillStyle = '#f1c40f';
+            ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+            // Core
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+    });
+};

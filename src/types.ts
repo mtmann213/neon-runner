@@ -71,6 +71,14 @@ export interface Warp {
   id: string;
 }
 
+export interface Firebar {
+  x: number;
+  y: number;
+  angle: number;
+  length: number;
+  speed: number;
+}
+
 export interface Prize {
   x: number;
   y: number;
@@ -108,7 +116,8 @@ export interface Level {
   bgLayers: BackgroundLayer[];
   warps?: Warp[];
   prizes?: Prize[];
-  waterLevel?: number; // Y coordinate of water surface
+  waterLevel?: number;
+  firebars?: Firebar[];
 }
 
 export interface Player {

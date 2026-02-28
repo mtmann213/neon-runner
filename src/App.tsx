@@ -198,6 +198,7 @@ const GameCanvas: React.FC = () => {
       );
 
       updateFireballs(fireballs, enemies, blocks, platforms, groundY, gravity, cameraX, canvas.width, audioEnabled, createParticles, scoreRef, setScore, startShake);
+      updateFirebars(level.firebars || [], player, onPlayerDamage);
       updateEnemyProjectiles(enemyProjectiles, player, cameraX, canvas.width, onPlayerDamage);
       updatePrizes(prizes, player, groundY, gravity, (prize) => {
           scoreRef.current += 500; setScore(scoreRef.current);
@@ -282,6 +283,7 @@ const GameCanvas: React.FC = () => {
 
       Renderer.drawPrizes(ctx, prizes);
       Renderer.drawFireballs(ctx, fireballs);
+      Renderer.drawFirebars(ctx, level.firebars || []);
       Renderer.drawEnemyProjectiles(ctx, enemyProjectiles);
       enemies.forEach(e => Renderer.drawEnemy(ctx, e, frameCount));
       Renderer.drawBoy(ctx, player, frameCount);
