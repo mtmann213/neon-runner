@@ -221,7 +221,6 @@ export const updateEnemies = (
         }
 
         if (rectIntersect(player, enemy)) {
-            const currentHeight = player.isRolling ? 30 : (player.bigTimer > 0 ? 100 : 60);
             if (player.vy > 0 && player.y < enemy.y && enemy.type !== 'spikes') {
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {
                     enemy.hp--;

@@ -48,6 +48,7 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 - **FIX:** Resolved TypeScript build errors that were causing a blank screen on start (missing `checkCollision`, unused `lives`, `undefined` check on `enemy.vx`).
 - **FIX:** Resolved game freeze when jumping (ReferenceError: `currentHeight` used before initialization).
 - **FIX:** Resolved white screen after refactor by fixing `import type` syntax and removing unused variables.
+- **FIX:** Resolved white screen after Double Jump implementation by removing unused variables (`clouds`, `mountains`, `currentHeight`).
 
 ## Pending Tasks / Ideas
 - [x] **Feel:** Implement Coyote Time and Jump Buffering.

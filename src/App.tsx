@@ -66,12 +66,6 @@ const GameCanvas: React.FC = () => {
       }
     };
 
-    const clouds = Array.from({ length: 15 }, (_, i) => ({
-      x: i * 400 + Math.random() * 200, y: 50 + Math.random() * 100, size: 30 + Math.random() * 40
-    }));
-    const mountains = Array.from({ length: 10 }, (_, i) => ({
-      x: i * 800, y: groundY, w: 600 + Math.random() * 400, h: 200 + Math.random() * 200
-    }));
     const grass = Array.from({ length: 50 }, () => ({
       x: Math.random() * worldWidth, y: groundY, size: 5 + Math.random() * 10
     }));
