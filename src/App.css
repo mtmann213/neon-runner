@@ -152,11 +152,73 @@ body {
     background: #444;
 }
 
-.high-score-mini {
-  font-size: 18px;
-  color: #00ffff;
-  margin-bottom: 20px;
+.loading-overlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 600px;
+  background: black;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 20;
 }
+
+.loading-text {
+  margin-top: 50px;
+  color: #f1c40f;
+  font-size: 24px;
+  letter-spacing: 5px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* 3D N64 Style Logo */
+.n64-logo {
+  width: 100px;
+  height: 100px;
+  perspective: 600px;
+}
+
+.n64-cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: spin 3s infinite linear;
+}
+
+@keyframes spin {
+  from { transform: rotateY(0) rotateX(20deg); }
+  to { transform: rotateY(360deg) rotateX(20deg); }
+}
+
+.face {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 80px;
+  font-weight: 900;
+  font-family: serif;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.face.front  { transform: translateZ(50px); background: #3498db; color: #2980b9; }
+.face.back   { transform: rotateY(180deg) translateZ(50px); background: #e74c3c; color: #c0392b; }
+.face.right  { transform: rotateY(90deg) translateZ(50px); background: #2ecc71; color: #27ae60; }
+.face.left   { transform: rotateY(-90deg) translateZ(50px); background: #f1c40f; color: #f39c12; }
+.face.top    { transform: rotateX(90deg) translateZ(50px); background: #333; }
+.face.bottom { transform: rotateX(-90deg) translateZ(50px); background: #333; }
 
 .gameclear { border-color: #f1c40f; }
 .gameclear h1 { color: #f1c40f; text-shadow: 0 0 20px #f1c40f; }

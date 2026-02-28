@@ -11,6 +11,7 @@ const GameCanvas: React.FC = () => {
   const [lives, setLives] = useState(3);
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(() => {
       const saved = localStorage.getItem('neonRunnerAudio');
       return saved === null ? true : saved === 'true';
@@ -339,10 +340,16 @@ const GameCanvas: React.FC = () => {
 
   return (
     <div className="game-container">
-      {!gameStarted && (
+      {!gameStarted && !isLoading && (
         <div className="start-overlay">
           <h1>NEON RUNNER</h1>
-          <button className="start-btn" onClick={() => setGameStarted(true)}>START GAME</button>
+          <button className="start-btn" onClick={() => {
+              setIsLoading(true);
+              setTimeout(() => {
+                  setIsLoading(false);
+                  setGameStarted(true);
+              }, 5000);
+          }}>START GAME</button>
           <div className="high-score">HIGH SCORE: {highScore}</div>
           <div className="level-select">
               <p>SELECT STARTING LEVEL</p>
@@ -364,6 +371,23 @@ const GameCanvas: React.FC = () => {
           </div>
         </div>
       )}
+
+      {isLoading && (
+          <div className="loading-overlay">
+              <div className="n64-logo">
+                  <div className="n64-cube">
+                      <div className="face front">N</div>
+                      <div className="face back">N</div>
+                      <div className="face right">N</div>
+                      <div className="face left">N</div>
+                      <div className="face top"></div>
+                      <div className="face bottom"></div>
+                  </div>
+              </div>
+              <div className="loading-text">LOADING...</div>
+          </div>
+      )}
+
       <canvas ref={canvasRef} width={800} height={600} />
 
       {gameState === 'won' && (
