@@ -144,13 +144,21 @@ export const updatePlayer = (
     if (player.speedBoostTimer > 0) player.speedBoostTimer--;
     if (player.jumpBoostTimer > 0) player.jumpBoostTimer--;
     if (player.giantTimer > 0) player.giantTimer--;
+    if (player.megaTimer > 0) player.megaTimer--;
     if (player.fireballTimer > 0) player.fireballTimer--;
     if (player.wingTimer > 0) player.wingTimer--;
 
-    const isGiant = player.giantTimer > 0;
+    const isMega = player.megaTimer > 0;
+    const isGiant = player.giantTimer > 0 || isMega;
     const isFlying = player.wingTimer > 0;
-    const currentHeight = player.isRolling ? 30 : (isGiant ? 360 : (player.bigTimer > 0 ? 100 : 60));
-    const currentWidth = isGiant ? 240 : (player.bigTimer > 0 ? 60 : 40);
+    
+    // 20x Bigger than Big Burger (360x240 * 20 = 7200x4800)
+    // Actually that might crash the browser, let's stick to screen-filling (GAME_HEIGHT * 2)
+    const megaHeight = 1200;
+    const megaWidth = 800;
+
+    const currentHeight = player.isRolling ? 30 : (isMega ? megaHeight : (isGiant ? 360 : (player.bigTimer > 0 ? 100 : 60)));
+    const currentWidth = isMega ? megaWidth : (isGiant ? 240 : (player.bigTimer > 0 ? 60 : 40));
     player.width = currentWidth;
     player.height = currentHeight;
 
@@ -252,8 +260,6 @@ export const updatePlayer = (
     if (isFlying && player.vy > 2) player.vy = 2;
 
     player.x += player.vx;
-    
-    // World Boundaries (Horizontal)
     if (player.x < 0) player.x = 0;
     if (player.x > level.worldWidth - player.width) player.x = level.worldWidth - player.width;
 
@@ -269,13 +275,7 @@ export const updatePlayer = (
 
     const prevY = player.y;
     player.y += player.vy;
-
-    // World Boundaries (Top)
-    if (player.y < -500) {
-        player.y = -500;
-        player.vy = 0;
-    }
-
+    if (player.y < -500) { player.y = -500; player.vy = 0; }
     player.isGrounded = false;
     if (player.y + currentHeight > groundY) {
         player.y = groundY - currentHeight;
@@ -425,7 +425,7 @@ export const updateEnemies = (
             }
         }
         if (rectIntersect(player, enemy)) {
-            if (player.giantTimer > 0) {
+            if (player.giantTimer > 0 || player.megaTimer > 0) {
                 enemy.alive = false;
                 scoreRef.current += 100; setScore(scoreRef.current);
                 createParticles(enemy.x + enemy.w/2, enemy.y + enemy.h/2, enemy.color || '#ff00ff', 30, 6);
@@ -447,8 +447,10 @@ export const updateEnemies = (
                         scoreRef.current += 1000; setScore(scoreRef.current);
                     }
                 } else {
-                    enemy.alive = false; player.vy = -8; 
-                    scoreRef.current += 50; setScore(scoreRef.current);
+                    enemy.alive = false;
+                    player.vy = -8;
+                    scoreRef.current += 50;
+                    setScore(scoreRef.current);
                     createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                     startShake(15, 5);
                     if (audioEnabled) audioManager.playBop();

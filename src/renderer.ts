@@ -16,53 +16,49 @@ export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, s
 };
 
 export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: number, isSwimming: boolean = false) => {
-    // --- GHOST TRAIL DRAWING ---
+    const isMega = p.megaTimer > 0;
+    const walkCycle = Math.sin(frameCount * 0.2) * 10;
+    const swimCycle = Math.sin(frameCount * 0.1) * 15;
+    
+    // Ghost Trail
     p.trail.forEach(t => {
         ctx.save();
         ctx.globalAlpha = t.alpha;
         if (!t.facingRight) { ctx.translate(t.x + t.width, t.y); ctx.scale(-1, 1); } else { ctx.translate(t.x, t.y); }
-        
-        // Simpler silhouette for trail
-        ctx.fillStyle = p.giantTimer > 0 ? '#f1c40f' : (p.speedBoostTimer > 0 ? '#f1c40f' : '#00ced1');
+        ctx.fillStyle = p.megaTimer > 0 ? `hsl(${frameCount * 10 % 360}, 100%, 50%)` : (p.giantTimer > 0 ? '#f1c40f' : '#00ced1');
         ctx.fillRect(t.width*0.25, t.height*0.33, t.width*0.5, t.height*0.5);
-        ctx.fillRect(t.width*0.3, t.height*0.08, t.width*0.4, t.height*0.26);
         ctx.restore();
     });
 
-    const walkCycle = Math.sin(frameCount * 0.2) * 10;
-    const swimCycle = Math.sin(frameCount * 0.1) * 15;
     ctx.save();
     if (!p.facingRight) { ctx.translate(p.x + p.width, p.y); ctx.scale(-1, 1); } else { ctx.translate(p.x, p.y); }
     
-    ctx.shadowBlur = p.giantTimer > 0 ? 40 : 15;
-    ctx.shadowColor = p.giantTimer > 0 ? '#f1c40f' : (p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1'));
+    ctx.shadowBlur = isMega ? 80 : (p.giantTimer > 0 ? 40 : 15);
+    ctx.shadowColor = isMega ? `hsl(${frameCount * 10 % 360}, 100%, 50%)` : (p.giantTimer > 0 ? '#f1c40f' : (p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1')));
 
     if (p.invincibilityFrames % 10 < 5) {
         if (p.isRolling) {
             const rollGrad = ctx.createRadialGradient(p.width/2, p.height/2, 5, p.width/2, p.height/2, p.width/2);
             rollGrad.addColorStop(0, '#ffffff');
-            rollGrad.addColorStop(1, '#f1c40f');
+            rollGrad.addColorStop(1, isMega ? `hsl(${frameCount * 10 % 360}, 100%, 50%)` : '#f1c40f');
             ctx.fillStyle = rollGrad; 
-            ctx.beginPath(); 
-            ctx.arc(p.width/2, p.height/2, p.width/2, 0, Math.PI * 2); 
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(p.width/2, p.height/2, p.width/2, 0, Math.PI * 2); ctx.fill();
         } else if (p.isWallSliding) {
-            const bodyGrad = ctx.createLinearGradient(p.width*0.1, p.height*0.2, p.width*0.7, p.height*0.8);
-            bodyGrad.addColorStop(0, '#ffffff');
-            bodyGrad.addColorStop(1, p.speedBoostTimer > 0 ? '#f39c12' : (p.jumpBoostTimer > 0 ? '#27ae60' : '#008b8b'));
-            ctx.fillStyle = bodyGrad;
+            ctx.fillStyle = '#00ced1';
             ctx.fillRect(p.width*0.1, p.height*0.2, p.width*0.6, p.height*0.6);
             ctx.fillStyle = '#f3e5ab';
             ctx.fillRect(p.width*0.2, p.height*0.05, p.width*0.4, p.height*0.2);
             ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(p.width*0.7, p.height*0.3); ctx.lineTo(p.width*0.9, p.height*0.2); ctx.stroke();
         } else {
-            if (p.giantTimer > 0) {
+            if (isMega) {
+                ctx.fillStyle = `hsl(${frameCount * 20 % 360}, 100%, 50%)`;
+            } else if (p.giantTimer > 0) {
                 ctx.fillStyle = `hsl(${frameCount * 5 % 360}, 70%, 50%)`;
             } else {
                 const bodyGrad = ctx.createLinearGradient(p.width*0.25, p.height*0.33, p.width*0.75, p.height*0.83);
                 bodyGrad.addColorStop(0, '#ffffff');
-                bodyGrad.addColorStop(1, p.speedBoostTimer > 0 ? '#f39c12' : (p.jumpBoostTimer > 0 ? '#27ae60' : '#008b8b'));
+                bodyGrad.addColorStop(1, p.speedBoostTimer > 0 ? '#f39c12' : (p.jumpBoostTimer > 0 ? '#27ae60' : '#00ced1'));
                 ctx.fillStyle = bodyGrad;
             }
             ctx.fillRect(p.width*0.25, p.height*0.33, p.width*0.5, p.height*0.5);
@@ -80,14 +76,10 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
                 ctx.shadowBlur = 15;
                 ctx.shadowColor = '#00ffff';
                 const flap = Math.sin(frameCount * 0.3) * 15;
-                ctx.beginPath();
-                ctx.moveTo(p.width*0.25, p.height*0.3);
-                ctx.quadraticCurveTo(-20, p.height*0.3 - 20 + flap, -10, p.height*0.3 + 20);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(p.width*0.75, p.height*0.3);
-                ctx.quadraticCurveTo(p.width + 20, p.height*0.3 - 20 + flap, p.width + 10, p.height*0.3 + 20);
-                ctx.fill();
+                ctx.beginPath(); ctx.moveTo(p.width*0.25, p.height*0.3);
+                ctx.quadraticCurveTo(-20, p.height*0.3 - 20 + flap, -10, p.height*0.3 + 20); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(p.width*0.75, p.height*0.3);
+                ctx.quadraticCurveTo(p.width + 20, p.height*0.3 - 20 + flap, p.width + 10, p.height*0.3 + 20); ctx.fill();
                 ctx.shadowBlur = 0;
             }
 
@@ -128,7 +120,6 @@ export const drawEnemy = (ctx: CanvasRenderingContext2D, e: Enemy, frameCount: n
         bodyGrad.addColorStop(1, e.color || '#e74c3c');
         ctx.fillStyle = bodyGrad; 
         ctx.fillRect(0, 0, e.w, e.h);
-
         if (e.type === 'boss') {
             ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillRect(10, 20, 30, 30); ctx.fillRect(60, 20, 30, 30);
             ctx.fillStyle = '#2c3e50'; ctx.fillRect(20, 30, 10, 10); ctx.fillRect(70, 30, 10, 10);
@@ -162,10 +153,8 @@ export const drawBackground = (
     layers?: BackgroundLayer[],
     waterLevel?: number
 ) => {
-
     const GAME_WIDTH = 800;
     const GAME_HEIGHT = 600;
-
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     if (layers) {
@@ -198,7 +187,9 @@ export const drawBackground = (
 export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
     prizes.forEach(p => {
         if (p.collected) return;
-        ctx.save(); ctx.translate(p.x, p.y); ctx.shadowBlur = 15; ctx.shadowColor = '#f1c40f';
+        ctx.save(); ctx.translate(p.x, p.y);
+        ctx.shadowBlur = p.type === 'megaburger' ? 30 : 15;
+        ctx.shadowColor = p.type === 'megaburger' ? '#f1c40f' : '#f1c40f';
         if (p.type === 'bacon') {
             ctx.fillStyle = '#ff9999'; ctx.fillRect(0, 5, 30, 10);
             ctx.fillStyle = '#ff0000'; ctx.fillRect(0, 15, 30, 5);
@@ -213,23 +204,17 @@ export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
             ctx.strokeStyle = '#95a5a6'; ctx.lineWidth = 3; ctx.beginPath();
             for(let i=0; i<4; i++) ctx.arc(15, 25 - i*6, 10, 0, Math.PI, false);
             ctx.stroke();
-        } else if (p.type === 'burger') {
+        } else if (p.type === 'burger' || p.type === 'megaburger') {
+            const s = p.type === 'megaburger' ? 1.5 : 1.0;
+            ctx.scale(s, s);
             ctx.fillStyle = '#e67e22'; ctx.beginPath(); ctx.arc(15, 10, 15, Math.PI, 0); ctx.fill();
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, 10, 30, 3);
             ctx.fillStyle = '#795548'; ctx.fillRect(0, 13, 30, 6);
             ctx.fillStyle = '#e67e22'; ctx.fillRect(0, 19, 30, 6);
         } else if (p.type === 'wing') {
-            ctx.fillStyle = 'white';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#00ffff';
-            ctx.beginPath();
-            ctx.moveTo(0, 15);
-            ctx.bezierCurveTo(-10, 0, 30, 0, 20, 15);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(30, 15);
-            ctx.bezierCurveTo(40, 0, 0, 0, 10, 15);
-            ctx.fill();
+            ctx.fillStyle = 'white'; ctx.shadowBlur = 10; ctx.shadowColor = '#00ffff';
+            ctx.beginPath(); ctx.moveTo(0, 15); ctx.bezierCurveTo(-10, 0, 30, 0, 20, 15); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(30, 15); ctx.bezierCurveTo(40, 0, 0, 0, 10, 15); ctx.fill();
         }
         ctx.restore();
     });

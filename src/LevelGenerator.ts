@@ -1,12 +1,13 @@
 import type { Level, Enemy, Chest, Platform, Block, BackgroundLayer, Warp, Firebar } from './types';
 
-const LOOT_TABLE: ('bacon' | 'carrot' | 'shoes' | 'spring' | 'burger' | 'wing')[] = [
+const LOOT_TABLE: ('bacon' | 'carrot' | 'shoes' | 'spring' | 'burger' | 'wing' | 'megaburger')[] = [
     'bacon', 'bacon', 'bacon', 'bacon', // 40%
     'spring', 'spring', 'spring',       // 30%
     'shoes', 'shoes',                   // 20%
-    'carrot',                           // 8% (approx)
-    'burger',                           // 2%
-    'wing'                              // 2%
+    'carrot',                           // 8%
+    'burger',                           // 1%
+    'wing',                             // 1%
+    'megaburger'                        // Rare
 ];
 
 export const getRandomPrize = () => LOOT_TABLE[Math.floor(Math.random() * LOOT_TABLE.length)];
