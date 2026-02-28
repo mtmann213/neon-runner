@@ -87,18 +87,13 @@ export const updateFirebars = (
 ) => {
     firebars.forEach(bar => {
         bar.angle += bar.speed;
-        
-        // Collision check for each fireball in the bar
         for (let i = 1; i <= bar.length; i++) {
-            const dist = i * 25; // Distance from center
+            const dist = i * 25;
             const fx = bar.x + Math.cos(bar.angle) * dist;
             const fy = bar.y + Math.sin(bar.angle) * dist;
-            
-            // Treat each fireball as a 15x15 circle for collision
             const dx = (player.x + player.width/2) - fx;
             const dy = (player.y + player.height/2) - fy;
             const distance = Math.sqrt(dx*dx + dy*dy);
-            
             if (distance < (player.width/2 + 10)) {
                 onPlayerDamage();
             }
@@ -175,12 +170,27 @@ export const updatePlayer = (
         if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed * waterMoveReduction;
         if (keys['ArrowRight']) player.vx = effectiveMoveSpeed * waterMoveReduction;
         if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
+        
         if (player.isGrounded) {
             player.coyoteTimer = 6;
             player.airJumpsLeft = 1; 
         } else if (player.coyoteTimer > 0) {
             player.coyoteTimer--;
         }
+
+        // Wall Jump Check
+        let onWall = false;
+        let wallDir = 0; 
+        if (!player.isGrounded && !isGiant && !inWater) {
+            blocks.forEach(b => {
+                if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
+                    if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
+                    else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
+                }
+            });
+        }
+        player.isWallSliding = onWall && player.vy > 0;
+
         if (player.jumpBufferTimer > 0) {
             if (inWater) {
                 player.vy = -4;
@@ -200,7 +210,7 @@ export const updatePlayer = (
                 player.vx = -wallDir * 8;
                 player.facingRight = wallDir === -1;
                 player.jumpBufferTimer = 0;
-                player.airJumpsLeft = 1;
+                player.airJumpsLeft = 1; 
                 createParticles(player.x + (wallDir === 1 ? player.width : 0), player.y + currentHeight/2, '#00ffff', 10, 2);
                 if (audioEnabled) audioManager.playJump();
             }
@@ -216,18 +226,6 @@ export const updatePlayer = (
         player.rollTimer--;
         if (player.rollTimer <= 0) player.isRolling = false;
     }
-
-    let onWall = false;
-    let wallDir = 0; 
-    if (!player.isGrounded && !isGiant && !inWater) {
-        blocks.forEach(b => {
-            if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
-                if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
-                else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
-            }
-        });
-    }
-    player.isWallSliding = onWall && player.vy > 0;
 
     const waterGravityReduction = inWater ? 0.3 : 1.0;
     player.vy += (player.isWallSliding ? gravity * 0.3 : gravity * waterGravityReduction);
@@ -266,7 +264,8 @@ export const updatePlayer = (
                     player.vy = 0;
                     if (!obj.hit) {
                         obj.hit = true;
-                        scoreRef.current += 200; setScore(scoreRef.current);
+                        scoreRef.current += 200;
+                        setScore(scoreRef.current);
                         createParticles(obj.x + obj.w/2, obj.y, '#f1c40f', 10, 2);
                         startShake(5, 2);
                         if (audioEnabled) audioManager.playCoin();
