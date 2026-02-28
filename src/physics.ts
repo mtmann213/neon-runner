@@ -120,8 +120,8 @@ export const updatePlayer = (
     if (player.fireballTimer > 0) player.fireballTimer--;
 
     const isGiant = player.giantTimer > 0;
-    const currentHeight = player.isRolling ? 30 : (isGiant ? 180 : (player.bigTimer > 0 ? 100 : 60));
-    const currentWidth = isGiant ? 120 : (player.bigTimer > 0 ? 60 : 40);
+    const currentHeight = player.isRolling ? 30 : (isGiant ? 360 : (player.bigTimer > 0 ? 100 : 60));
+    const currentWidth = isGiant ? 240 : (player.bigTimer > 0 ? 60 : 40);
     player.width = currentWidth;
     player.height = currentHeight;
 
