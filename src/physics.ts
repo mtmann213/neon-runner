@@ -16,6 +16,9 @@ export const updateFireballs = (
     fireballs: Fireball[],
     enemies: Enemy[],
     blocks: Block[],
+    platforms: Platform[],
+    groundY: number,
+    gravity: number,
     cameraX: number,
     canvasWidth: number,
     audioEnabled: boolean,
@@ -26,15 +29,39 @@ export const updateFireballs = (
 ) => {
     fireballs.forEach(fb => {
         if (!fb.active) return;
-        fb.x += fb.vx;
 
-        // Deactivate if off-screen
-        if (fb.x < cameraX || fb.x > cameraX + canvasWidth) {
+        // Apply Physics
+        fb.vy += gravity;
+        fb.x += fb.vx;
+        fb.y += fb.vy;
+
+        // Ground Bounce
+        if (fb.y + fb.h > groundY) {
+            fb.y = groundY - fb.h;
+            fb.vy = -Math.abs(fb.vy) * 0.8;
+            if (Math.abs(fb.vy) < 1) fb.active = false;
+        }
+
+        // Platform Bounce
+        platforms.forEach(plat => {
+            if (fb.active && 
+                fb.x + fb.w > plat.x && fb.x < plat.x + plat.w &&
+                fb.y + fb.h > plat.y && fb.y < plat.y + plat.h) {
+                if (fb.vy > 0 && fb.y + fb.h - fb.vy <= plat.y) {
+                    fb.y = plat.y - fb.h;
+                    fb.vy = -Math.abs(fb.vy) * 0.8;
+                } else {
+                    fb.active = false;
+                    createParticles(fb.x, fb.y + fb.h/2, '#e67e22', 5, 2);
+                }
+            }
+        });
+
+        if (fb.x < cameraX - 100 || fb.x > cameraX + canvasWidth + 100) {
             fb.active = false;
             return;
         }
 
-        // Collision with blocks
         blocks.forEach(block => {
             if (fb.active && rectIntersect(fb, block)) {
                 fb.active = false;
@@ -42,7 +69,6 @@ export const updateFireballs = (
             }
         });
 
-        // Collision with enemies
         enemies.forEach(enemy => {
             if (fb.active && enemy.alive && rectIntersect(fb, enemy)) {
                 fb.active = false;
@@ -86,7 +112,6 @@ export const updatePlayer = (
     setScore: (s: number) => void,
     startShake: (d: number, i: number) => void
 ) => {
-    // Timers
     if (player.invincibilityFrames > 0) player.invincibilityFrames--;
     if (player.speedBoostTimer > 0) player.speedBoostTimer--;
     if (player.jumpBoostTimer > 0) player.jumpBoostTimer--;
@@ -114,41 +139,35 @@ export const updatePlayer = (
         player.vx = 0;
         if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed;
         if (keys['ArrowRight']) player.vx = effectiveMoveSpeed;
-// Jump Logic
-if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
-if (player.isGrounded) {
-    player.coyoteTimer = 6;
-    player.canDoubleJump = true;
-} else if (player.coyoteTimer > 0) {
-    player.coyoteTimer--;
-}
 
-if (player.jumpBufferTimer > 0) {
-    // Grounded Jump (or Coyote)
-    if (player.coyoteTimer > 0) {
-        player.vy = effectiveJumpStrength;
-        player.isGrounded = false;
-        player.coyoteTimer = 0;
-        player.jumpBufferTimer = 0;
-        createParticles(player.x + player.width/2, player.y + currentHeight, '#7d5c34', 8, 2);
-        if (audioEnabled) audioManager.playJump();
-    } 
-    // Mid-air Double Jump
-    else if (player.canDoubleJump) {
-        player.vy = effectiveJumpStrength * 0.9; // Slightly weaker double jump
-        player.canDoubleJump = false;
-        player.jumpBufferTimer = 0;
-        // Unique particles for double jump (Cyan/Blue)
-        createParticles(player.x + player.width/2, player.y + currentHeight, '#00ffff', 12, 3);
-        if (audioEnabled) audioManager.playJump();
+        if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
+        if (player.isGrounded) {
+            player.coyoteTimer = 6;
+            player.canDoubleJump = true;
+        } else if (player.coyoteTimer > 0) {
+            player.coyoteTimer--;
+        }
+
+        if (player.jumpBufferTimer > 0) {
+            if (player.coyoteTimer > 0) {
+                player.vy = effectiveJumpStrength;
+                player.isGrounded = false;
+                player.coyoteTimer = 0;
+                player.jumpBufferTimer = 0;
+                createParticles(player.x + player.width/2, player.y + currentHeight, '#7d5c34', 8, 2);
+                if (audioEnabled) audioManager.playJump();
+            } 
+            else if (player.canDoubleJump) {
+                player.vy = effectiveJumpStrength * 0.9;
+                player.canDoubleJump = false;
+                player.jumpBufferTimer = 0;
+                createParticles(player.x + player.width/2, player.y + currentHeight, '#00ffff', 12, 3);
+                if (audioEnabled) audioManager.playJump();
+            }
+        }
     }
-}
-}
-
 
     player.vy += gravity;
-
-    // X Collision
     player.x += player.vx;
     blocks.forEach(obj => {
         if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
@@ -158,7 +177,6 @@ if (player.jumpBufferTimer > 0) {
         }
     });
 
-    // Y Collision
     const prevY = player.y;
     player.y += player.vy;
     player.isGrounded = false;
@@ -186,7 +204,6 @@ if (player.jumpBufferTimer > 0) {
                     createParticles(obj.x + obj.w/2, obj.y, '#f1c40f', 10, 2);
                     startShake(5, 2);
                     if (audioEnabled) audioManager.playCoin();
-                    
                     if (obj.prizeType) {
                         prizes.push({
                             x: obj.x + (obj.w - 30)/2,
@@ -223,17 +240,14 @@ export const updatePrizes = (
 ) => {
     prizes.forEach(prize => {
         if (prize.collected) return;
-
         prize.vy += gravity;
         prize.x += prize.vx;
         prize.y += prize.vy;
-
         if (prize.y + prize.h > groundY) {
             prize.y = groundY - prize.h;
             prize.vy = 0;
             prize.vx *= 0.9;
         }
-
         if (rectIntersect(player, prize)) {
             prize.collected = true;
             onCollect(prize);
@@ -256,7 +270,6 @@ export const updateEnemies = (
 ) => {
     enemies.forEach(enemy => {
         if (!enemy.alive) return;
-
         if (enemy.type === 'patrol' && enemy.vx !== undefined) {
             enemy.x += enemy.vx;
             if (enemy.x > (enemy.id < 100 ? enemy.id * 800 + 400 : 8000) || 
@@ -276,7 +289,6 @@ export const updateEnemies = (
                 }
             }
         }
-
         if (rectIntersect(player, enemy)) {
             if (player.vy > 0 && player.y < enemy.y && enemy.type !== 'spikes') {
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {

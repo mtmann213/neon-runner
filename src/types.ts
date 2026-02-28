@@ -65,6 +65,7 @@ export interface Fireball {
   x: number;
   y: number;
   vx: number;
+  vy: number;
   w: number;
   h: number;
   active: boolean;

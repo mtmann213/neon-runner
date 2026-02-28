@@ -92,6 +92,7 @@ const GameCanvas: React.FC = () => {
                 x: player.x + (player.facingRight ? player.width : -20),
                 y: player.y + player.height / 2 - 10,
                 vx: player.facingRight ? 10 : -10,
+                vy: -2, // Initial upward pop
                 w: 20, h: 20,
                 active: true
             });
@@ -120,8 +121,8 @@ const GameCanvas: React.FC = () => {
       );
 
       updateFireballs(
-          fireballs, enemies, blocks, cameraX, canvas.width, audioEnabled, 
-          createParticles, scoreRef, setScore, startShake
+          fireballs, enemies, blocks, platforms, groundY, gravity, cameraX, canvas.width, 
+          audioEnabled, createParticles, scoreRef, setScore, startShake
       );
 
       updatePrizes(prizes, player, groundY, gravity, (prize) => {
