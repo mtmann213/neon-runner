@@ -1,15 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
+import { audioManager } from './AudioManager';
 
 const GameCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [lives, setLives] = useState(3);
   const [score, setScore] = useState(0);
+  const [gameStarted, setGameStarted] = useState(false);
   
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
 
   useEffect(() => {
+    if (!gameStarted) return;
+    audioManager.startMusic();
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -180,6 +185,7 @@ const GameCanvas: React.FC = () => {
         if (keys['Space'] && player.isGrounded) {
           player.vy = jumpStrength; player.isGrounded = false;
           createParticles(player.x + 20, groundY, '#7d5c34', 8, 2);
+          audioManager.playJump();
         }
       }
 
@@ -197,6 +203,7 @@ const GameCanvas: React.FC = () => {
               setScore(scoreRef.current);
               createParticles(chest.x + 20, chest.y + 20, '#f1c40f', 15, 4);
               startShake(10, 3); // Light shake for chest
+              audioManager.playChest();
               if (chest.type === 'health') { livesRef.current++; setLives(livesRef.current); }
               else if (chest.type === 'speed') player.speedBoostTimer = 300;
           }
@@ -214,16 +221,19 @@ const GameCanvas: React.FC = () => {
                   scoreRef.current += 50; setScore(scoreRef.current);
                   createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                   startShake(15, 5); // Medium shake for kill
+                  audioManager.playBop();
               } else if (player.isRolling && enemy.type !== 'spikes') {
                   enemy.alive = false; 
                   scoreRef.current += 50; setScore(scoreRef.current);
                   createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                   startShake(15, 5); // Medium shake for kill
+                  audioManager.playBop();
               } else if (player.invincibilityFrames === 0) {
                   livesRef.current--; setLives(livesRef.current);
                   player.invincibilityFrames = 60;
                   createParticles(player.x + 20, player.y + 20, '#3498db', 10, 3);
                   startShake(20, 10); // Big shake for damage
+                  audioManager.playDamage();
                   if (livesRef.current <= 0) {
                       livesRef.current = 3; setLives(3);
                       scoreRef.current = 0; setScore(0);
@@ -292,11 +302,22 @@ const GameCanvas: React.FC = () => {
 
   return (
     <div className="game-container">
+      {!gameStarted && (
+        <div className="start-overlay" onClick={() => setGameStarted(true)}>
+          <h1>NEON RUNNER</h1>
+          <p>Click to Start</p>
+          <div className="controls-hint">
+            <p>ARROWS to Move</p>
+            <p>SPACE to Jump</p>
+            <p>SHIFT to Roll</p>
+          </div>
+        </div>
+      )}
       <canvas ref={canvasRef} width={800} height={600} />
       <div className="instructions">
-        <h3>Game Juice: Screen Shake!</h3>
-        <p>The screen now shakes when you bop an enemy or take a hit.</p>
-        <p>This makes the action feel much more powerful!</p>
+        <h3>Game Juice: Synthwave Audio!</h3>
+        <p>Added procedural synthwave music and sound effects using Web Audio API.</p>
+        <p>Bop enemies, jump, and open chests to hear the feedback!</p>
       </div>
     </div>
   );

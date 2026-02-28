@@ -16,6 +16,52 @@ body {
   flex-direction: column;
   align-items: center;
   padding-top: 20px;
+  position: relative;
+}
+
+.start-overlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 600px;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  cursor: pointer;
+  border: 4px solid #f1c40f;
+  box-sizing: border-box;
+}
+
+.start-overlay h1 {
+  font-size: 64px;
+  color: #f1c40f;
+  margin: 0;
+  text-shadow: 0 0 20px #f1c40f;
+}
+
+.start-overlay p {
+  font-size: 24px;
+  color: white;
+  margin-top: 20px;
+}
+
+.controls-hint {
+  margin-top: 40px;
+  background: #222;
+  padding: 20px;
+  border: 2px solid #333;
+  border-radius: 10px;
+}
+
+.controls-hint p {
+  font-size: 16px;
+  margin: 5px 0;
+  color: #aaa;
 }
 
 .ui-overlay {

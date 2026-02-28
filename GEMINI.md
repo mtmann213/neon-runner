@@ -19,11 +19,16 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
   - Screen Shake (on damage, kill, chest open).
   - Frame-based animations (simple walk cycle).
   - Parallax-lite background (mountains and clouds).
+  - **NEW:** Procedural Synthwave Music and Sound Effects (Web Audio API).
+  - **NEW:** Start Game overlay to handle audio context initialization.
 
 ## Recent Changes
 - Initialized Git repository.
 - Created `GEMINI.md` for session persistence.
 - Refined initial project structure.
+- Implemented `AudioManager.ts` for procedural sound.
+- Integrated audio triggers (jump, bop, damage, chest) into `App.tsx`.
+- Added `Start Game` overlay for audio activation.
 
 ## Pending Tasks / Ideas
 - [ ] Add sound effects (Web Audio API).
