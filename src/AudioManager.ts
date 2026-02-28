@@ -17,19 +17,29 @@ class AudioManager {
 
   private init() {
     if (this.ctx) return;
-    this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.connect(this.ctx.destination);
-    this.masterGain.gain.value = 0.5;
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) {
+        console.warn("Web Audio API not supported in this browser.");
+        return;
+      }
+      this.ctx = new AudioContextClass();
+      
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.connect(this.ctx.destination);
+      this.masterGain.gain.value = 0.5;
 
-    this.musicGain = this.ctx.createGain();
-    this.musicGain.connect(this.masterGain);
-    this.musicGain.gain.value = 0.3;
+      this.musicGain = this.ctx.createGain();
+      this.musicGain.connect(this.masterGain);
+      this.musicGain.gain.value = 0.3;
 
-    this.sfxGain = this.ctx.createGain();
-    this.sfxGain.connect(this.masterGain);
-    this.sfxGain.gain.value = 0.6;
+      this.sfxGain = this.ctx.createGain();
+      this.sfxGain.connect(this.masterGain);
+      this.sfxGain.gain.value = 0.6;
+    } catch (e) {
+      console.error("Failed to initialize AudioContext:", e);
+      this.ctx = null;
+    }
   }
 
   // --- Sound Effects ---

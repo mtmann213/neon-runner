@@ -7,13 +7,14 @@ const GameCanvas: React.FC = () => {
   const [lives, setLives] = useState(3);
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true);
   
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
 
   useEffect(() => {
     if (!gameStarted) return;
-    audioManager.startMusic();
+    if (audioEnabled) audioManager.startMusic();
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -185,7 +186,7 @@ const GameCanvas: React.FC = () => {
         if (keys['Space'] && player.isGrounded) {
           player.vy = jumpStrength; player.isGrounded = false;
           createParticles(player.x + 20, groundY, '#7d5c34', 8, 2);
-          audioManager.playJump();
+          if (audioEnabled) audioManager.playJump();
         }
       }
 
@@ -203,7 +204,7 @@ const GameCanvas: React.FC = () => {
               setScore(scoreRef.current);
               createParticles(chest.x + 20, chest.y + 20, '#f1c40f', 15, 4);
               startShake(10, 3); // Light shake for chest
-              audioManager.playChest();
+              if (audioEnabled) audioManager.playChest();
               if (chest.type === 'health') { livesRef.current++; setLives(livesRef.current); }
               else if (chest.type === 'speed') player.speedBoostTimer = 300;
           }
@@ -221,19 +222,19 @@ const GameCanvas: React.FC = () => {
                   scoreRef.current += 50; setScore(scoreRef.current);
                   createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                   startShake(15, 5); // Medium shake for kill
-                  audioManager.playBop();
+                  if (audioEnabled) audioManager.playBop();
               } else if (player.isRolling && enemy.type !== 'spikes') {
                   enemy.alive = false; 
                   scoreRef.current += 50; setScore(scoreRef.current);
                   createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                   startShake(15, 5); // Medium shake for kill
-                  audioManager.playBop();
+                  if (audioEnabled) audioManager.playBop();
               } else if (player.invincibilityFrames === 0) {
                   livesRef.current--; setLives(livesRef.current);
                   player.invincibilityFrames = 60;
                   createParticles(player.x + 20, player.y + 20, '#3498db', 10, 3);
                   startShake(20, 10); // Big shake for damage
-                  audioManager.playDamage();
+                  if (audioEnabled) audioManager.playDamage();
                   if (livesRef.current <= 0) {
                       livesRef.current = 3; setLives(3);
                       scoreRef.current = 0; setScore(0);
@@ -304,9 +305,14 @@ const GameCanvas: React.FC = () => {
   return (
     <div className="game-container">
       {!gameStarted && (
-        <div className="start-overlay" onClick={() => setGameStarted(true)}>
+        <div className="start-overlay">
           <h1>NEON RUNNER</h1>
-          <p>Click to Start</p>
+          <button className="start-btn" onClick={() => setGameStarted(true)}>START GAME</button>
+          
+          <div className="audio-toggle" onClick={() => setAudioEnabled(!audioEnabled)}>
+            Audio: {audioEnabled ? '🔊 ON' : '🔇 OFF'}
+          </div>
+
           <div className="controls-hint">
             <p>ARROWS to Move</p>
             <p>SPACE to Jump</p>

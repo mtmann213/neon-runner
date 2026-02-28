@@ -31,6 +31,8 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 - Added `Start Game` overlay for audio activation.
 - **FIX:** Added `gameStarted` to `useEffect` dependency array so the game loop actually starts.
 - **FIX:** Added `audioManager.stopMusic()` to `useEffect` cleanup.
+- **IMPROVEMENT:** Hardened `AudioManager.ts` with try-catch and null checks for environments without audio drivers.
+- **IMPROVEMENT:** Added Audio ON/OFF toggle to the Start Overlay.
 
 ## Pending Tasks / Ideas
 - [ ] Add sound effects (Web Audio API).
