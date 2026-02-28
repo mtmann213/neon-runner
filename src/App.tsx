@@ -117,7 +117,7 @@ const GameCanvas: React.FC = () => {
       invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
       giantTimer: 0, fireballTimer: 0, wingTimer: 0,
       facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0, airJumpsLeft: 1, 
-      isWallSliding: false
+      isWallSliding: false, trail: []
     };
 
     const keys: { [key: string]: boolean } = {};
@@ -204,7 +204,7 @@ const GameCanvas: React.FC = () => {
         return;
       }
 
-      updatePlayer(player, keys, level, gravity, jumpStrength, moveSpeed, rollSpeed, groundY, audioEnabled, createParticles, scoreRef, setScore, startShake, onWarp);
+      updatePlayer(player, keys, level, gravity, jumpStrength, moveSpeed, rollSpeed, groundY, audioEnabled, createParticles, scoreRef, setScore, startShake, onWarp, frameCount);
       updateFireballs(fireballs, enemies, blocks, platforms, groundY, gravity, cameraX, canvas.width, audioEnabled, createParticles, scoreRef, setScore, startShake);
       updateFirebars(level.firebars || [], player, onPlayerDamage);
       updateEnemyProjectiles(enemyProjectiles, player, cameraX, canvas.width, onPlayerDamage);

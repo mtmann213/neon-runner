@@ -134,7 +134,8 @@ export const updatePlayer = (
     scoreRef: React.MutableRefObject<number>,
     setScore: (s: number) => void,
     startShake: (d: number, i: number) => void,
-    onWarp: (warp: Warp) => void
+    onWarp: (warp: Warp) => void,
+    frameCount: number
 ) => {
     const { platforms, blocks } = level;
     const prizes = level.prizes || [];
@@ -142,7 +143,7 @@ export const updatePlayer = (
     if (player.invincibilityFrames > 0) player.invincibilityFrames--;
     if (player.speedBoostTimer > 0) player.speedBoostTimer--;
     if (player.jumpBoostTimer > 0) player.jumpBoostTimer--;
-    // bigTimer no longer decrements (permanent)
+    if (player.bigTimer > 0) player.bigTimer--;
     if (player.giantTimer > 0) player.giantTimer--;
     if (player.fireballTimer > 0) player.fireballTimer--;
     if (player.wingTimer > 0) player.wingTimer--;
@@ -156,6 +157,19 @@ export const updatePlayer = (
 
     const effectiveMoveSpeed = player.speedBoostTimer > 0 ? moveSpeed * 1.6 : moveSpeed;
     const effectiveJumpStrength = player.jumpBoostTimer > 0 ? jumpStrength * 1.5 : jumpStrength;
+
+    // --- GHOST TRAIL LOGIC ---
+    if (player.isRolling || isFlying || player.speedBoostTimer > 0 || isGiant) {
+        if (frameCount % 2 === 0) {
+            player.trail.push({
+                x: player.x, y: player.y, 
+                width: player.width, height: player.height, 
+                facingRight: player.facingRight, alpha: 0.6
+            });
+        }
+    }
+    player.trail.forEach(t => t.alpha -= 0.05);
+    player.trail = player.trail.filter(t => t.alpha > 0);
 
     const inWater = level.waterLevel !== undefined && player.y + currentHeight/2 > level.waterLevel;
 
@@ -180,21 +194,8 @@ export const updatePlayer = (
             player.coyoteTimer--;
         }
 
-        let onWall = false;
-        let wallDir = 0; 
-        if (!player.isGrounded && !isGiant && !inWater && !isFlying) {
-            blocks.forEach(b => {
-                if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
-                    if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
-                    else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
-                }
-            });
-        }
-        player.isWallSliding = onWall && player.vy > 0;
-
         if (player.jumpBufferTimer > 0) {
             if (isFlying) {
-                // Flight mechanics: holding Jump moves you up
                 player.vy = -6;
                 player.jumpBufferTimer = 0;
                 createParticles(player.x + player.width/2, player.y + currentHeight, '#ffffff', 2, 1);
@@ -234,12 +235,24 @@ export const updatePlayer = (
         if (player.rollTimer <= 0) player.isRolling = false;
     }
 
+    let onWall = false;
+    let wallDir = 0; 
+    if (!player.isGrounded && !isGiant && !inWater && !isFlying) {
+        blocks.forEach(b => {
+            if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
+                if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
+                else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
+            }
+        });
+    }
+    player.isWallSliding = onWall && player.vy > 0;
+
     const waterGravityReduction = inWater ? 0.3 : 1.0;
     const flightGravityReduction = isFlying ? 0.1 : 1.0;
     player.vy += (player.isWallSliding ? gravity * 0.3 : gravity * waterGravityReduction * flightGravityReduction);
     
     if (inWater && player.vy > 3) player.vy = 3;
-    if (isFlying && player.vy > 2) player.vy = 2; // Very slow fall when flying
+    if (isFlying && player.vy > 2) player.vy = 2;
 
     player.x += player.vx;
     if (!isGiant) {
@@ -411,8 +424,9 @@ export const updateEnemies = (
                 if (audioEnabled) audioManager.playBop();
                 return;
             }
-            const prevPlayerBottom = player.y + player.height - player.vy;
-            if (player.vy > 0 && prevPlayerBottom <= enemy.y && enemy.type !== 'spikes') {
+            const bopThreshold = enemy.type === 'boss' ? enemy.h * 0.4 : 0; 
+            const isFallingOnTop = player.vy > 0 && (player.y + player.height - player.vy) <= (enemy.y + bopThreshold);
+            if (isFallingOnTop && enemy.type !== 'spikes') {
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {
                     enemy.hp--;
                     player.vy = -12;
@@ -424,10 +438,8 @@ export const updateEnemies = (
                         scoreRef.current += 1000; setScore(scoreRef.current);
                     }
                 } else {
-                    enemy.alive = false;
-                    player.vy = -8;
-                    scoreRef.current += 50;
-                    setScore(scoreRef.current);
+                    enemy.alive = false; player.vy = -8; 
+                    scoreRef.current += 50; setScore(scoreRef.current);
                     createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                     startShake(15, 5);
                     if (audioEnabled) audioManager.playBop();

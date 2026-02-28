@@ -143,4 +143,5 @@ export interface Player {
   jumpBufferTimer: number;
   airJumpsLeft: number;
   isWallSliding: boolean;
+  trail: { x: number, y: number, width: number, height: number, facingRight: boolean, alpha: number }[];
 }

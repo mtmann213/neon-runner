@@ -16,6 +16,19 @@ export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, s
 };
 
 export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: number, isSwimming: boolean = false) => {
+    // --- GHOST TRAIL DRAWING ---
+    p.trail.forEach(t => {
+        ctx.save();
+        ctx.globalAlpha = t.alpha;
+        if (!t.facingRight) { ctx.translate(t.x + t.width, t.y); ctx.scale(-1, 1); } else { ctx.translate(t.x, t.y); }
+        
+        // Simpler silhouette for trail
+        ctx.fillStyle = p.giantTimer > 0 ? '#f1c40f' : (p.speedBoostTimer > 0 ? '#f1c40f' : '#00ced1');
+        ctx.fillRect(t.width*0.25, t.height*0.33, t.width*0.5, t.height*0.5);
+        ctx.fillRect(t.width*0.3, t.height*0.08, t.width*0.4, t.height*0.26);
+        ctx.restore();
+    });
+
     const walkCycle = Math.sin(frameCount * 0.2) * 10;
     const swimCycle = Math.sin(frameCount * 0.1) * 15;
     ctx.save();
