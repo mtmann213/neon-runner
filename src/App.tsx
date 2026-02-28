@@ -172,7 +172,6 @@ const GameCanvas: React.FC = () => {
         }
 
         livesRef.current--;
-        setLivesState(livesRef.current);
         player.invincibilityFrames = 60;
         createParticles(player.x + player.width/2, player.y + player.height/2, '#3498db', 10, 3);
         startShake(20, 10);

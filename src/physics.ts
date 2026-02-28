@@ -143,7 +143,6 @@ export const updatePlayer = (
     if (player.invincibilityFrames > 0) player.invincibilityFrames--;
     if (player.speedBoostTimer > 0) player.speedBoostTimer--;
     if (player.jumpBoostTimer > 0) player.jumpBoostTimer--;
-    if (player.bigTimer > 0) player.bigTimer--;
     if (player.giantTimer > 0) player.giantTimer--;
     if (player.fireballTimer > 0) player.fireballTimer--;
     if (player.wingTimer > 0) player.wingTimer--;
@@ -158,7 +157,6 @@ export const updatePlayer = (
     const effectiveMoveSpeed = player.speedBoostTimer > 0 ? moveSpeed * 1.6 : moveSpeed;
     const effectiveJumpStrength = player.jumpBoostTimer > 0 ? jumpStrength * 1.5 : jumpStrength;
 
-    // --- GHOST TRAIL LOGIC ---
     if (player.isRolling || isFlying || player.speedBoostTimer > 0 || isGiant) {
         if (frameCount % 2 === 0) {
             player.trail.push({
@@ -193,6 +191,18 @@ export const updatePlayer = (
         } else if (player.coyoteTimer > 0) {
             player.coyoteTimer--;
         }
+
+        let onWall = false;
+        let wallDir = 0; 
+        if (!player.isGrounded && !isGiant && !inWater && !isFlying) {
+            blocks.forEach(b => {
+                if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
+                    if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
+                    else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
+                }
+            });
+        }
+        player.isWallSliding = onWall && player.vy > 0;
 
         if (player.jumpBufferTimer > 0) {
             if (isFlying) {
@@ -235,22 +245,9 @@ export const updatePlayer = (
         if (player.rollTimer <= 0) player.isRolling = false;
     }
 
-    let onWall = false;
-    let wallDir = 0; 
-    if (!player.isGrounded && !isGiant && !inWater && !isFlying) {
-        blocks.forEach(b => {
-            if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
-                if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
-                else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
-            }
-        });
-    }
-    player.isWallSliding = onWall && player.vy > 0;
-
     const waterGravityReduction = inWater ? 0.3 : 1.0;
     const flightGravityReduction = isFlying ? 0.1 : 1.0;
     player.vy += (player.isWallSliding ? gravity * 0.3 : gravity * waterGravityReduction * flightGravityReduction);
-    
     if (inWater && player.vy > 3) player.vy = 3;
     if (isFlying && player.vy > 2) player.vy = 2;
 
