@@ -55,8 +55,9 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
 - [x] **Architecture:** Refactor `App.tsx` into specialized modules (Physics, Rendering, State).
 - [x] **Visuals:** Add Neon Glow (shadowBlur), Parallax background layers, and CRT Scanline overlay.
 - [x] **Content:** Add a "Double Jump" mechanic (inherent or power-up).
-- [ ] **Polish:** Add a Main Menu and a "Game Clear" final screen.
-- [ ] **Polish:** Add a Main Menu and a "Game Clear" final screen.
+- [x] **Polish:** Add a Main Menu and a "Game Clear" final screen.
+- [x] **Persistence:** Save high scores to LocalStorage.
+
 - [ ] **Persistence:** Save high scores to LocalStorage.
 
 ## Technical Debt / Known Issues

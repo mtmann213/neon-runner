@@ -93,6 +93,30 @@ body {
 .gameover { border-color: #e74c3c; }
 .gameover h1 { color: #e74c3c; text-shadow: 0 0 20px #e74c3c; }
 
+.high-score {
+  margin-top: 15px;
+  font-size: 24px;
+  color: #00ffff;
+  text-shadow: 0 0 10px #00ffff;
+  font-weight: bold;
+}
+
+.high-score-mini {
+  font-size: 18px;
+  color: #00ffff;
+  margin-bottom: 20px;
+}
+
+.gameclear { border-color: #f1c40f; }
+.gameclear h1 { color: #f1c40f; text-shadow: 0 0 20px #f1c40f; }
+
+.final-stats {
+  margin-bottom: 30px;
+  font-size: 24px;
+  color: white;
+  text-align: center;
+}
+
 .state-overlay p {
     font-size: 32px;
     margin-bottom: 40px;

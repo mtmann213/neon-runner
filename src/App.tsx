@@ -12,13 +12,14 @@ const GameCanvas: React.FC = () => {
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
-  const [gameState, setGameState] = useState<'playing' | 'won' | 'gameover'>('playing');
+  const [gameState, setGameState] = useState<'playing' | 'won' | 'gameover' | 'gameclear'>('playing');
   const [currentLevel, setCurrentLevel] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
+  const [highScore, setHighScore] = useState(() => Number(localStorage.getItem('neonRunnerHighScore')) || 0);
   
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
-  const gameStateRef = useRef<'playing' | 'won' | 'gameover'>('playing');
+  const gameStateRef = useRef<'playing' | 'won' | 'gameover' | 'gameclear'>('playing');
 
   useEffect(() => {
     if (!gameStarted) return;
@@ -112,8 +113,17 @@ const GameCanvas: React.FC = () => {
       if (shakeTimer > 0) shakeTimer--;
 
       if (player.x > worldWidth - 120) {
-        gameStateRef.current = 'won';
-        setGameState('won');
+        if (currentLevel === LEVELS.length - 1) {
+            gameStateRef.current = 'gameclear';
+            setGameState('gameclear');
+            if (scoreRef.current > highScore) {
+                setHighScore(scoreRef.current);
+                localStorage.setItem('neonRunnerHighScore', scoreRef.current.toString());
+            }
+        } else {
+            gameStateRef.current = 'won';
+            setGameState('won');
+        }
         return;
       }
 
@@ -159,6 +169,10 @@ const GameCanvas: React.FC = () => {
           if (livesRef.current <= 0) {
               gameStateRef.current = 'gameover';
               setGameState('gameover');
+              if (scoreRef.current > highScore) {
+                  setHighScore(scoreRef.current);
+                  localStorage.setItem('neonRunnerHighScore', scoreRef.current.toString());
+              }
           }
         }
       );
@@ -272,6 +286,9 @@ const GameCanvas: React.FC = () => {
         <div className="start-overlay">
           <h1>NEON RUNNER</h1>
           <button className="start-btn" onClick={() => setGameStarted(true)}>START GAME</button>
+          
+          <div className="high-score">HIGH SCORE: {highScore}</div>
+
           <div className="audio-toggle" onClick={() => setAudioEnabled(!audioEnabled)}>
             Audio: {audioEnabled ? '🔊 ON' : '🔇 OFF'}
           </div>
@@ -300,12 +317,31 @@ const GameCanvas: React.FC = () => {
           <div className="state-overlay gameover">
               <h1>GAME OVER</h1>
               <p>Score: {score}</p>
+              <div className="high-score-mini">High Score: {highScore}</div>
               <button className="start-btn" onClick={() => {
                   livesRef.current = 3; setLives(3);
                   scoreRef.current = 0; setScore(0);
                   setRetryKey(prev => prev + 1);
                   setGameState('playing');
               }}>RETRY</button>
+          </div>
+      )}
+
+      {gameState === 'gameclear' && (
+          <div className="state-overlay gameclear">
+              <h1>NEON CHAMPION</h1>
+              <p>YOU CLEARED ALL LEVELS!</p>
+              <div className="final-stats">
+                  <div>Final Score: {score}</div>
+                  <div>High Score: {highScore}</div>
+              </div>
+              <button className="start-btn" onClick={() => {
+                  livesRef.current = 3; setLives(3);
+                  scoreRef.current = 0; setScore(0);
+                  setCurrentLevel(0);
+                  setRetryKey(prev => prev + 1);
+                  setGameState('playing');
+              }}>PLAY AGAIN</button>
           </div>
       )}
 
