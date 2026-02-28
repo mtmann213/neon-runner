@@ -29,21 +29,16 @@ export const updateFireballs = (
 ) => {
     fireballs.forEach(fb => {
         if (!fb.active) return;
-
         fb.vy += gravity;
         fb.x += fb.vx;
         fb.y += fb.vy;
-
         if (fb.y + fb.h > groundY) {
             fb.y = groundY - fb.h;
             fb.vy = -Math.abs(fb.vy) * 0.8;
             if (Math.abs(fb.vy) < 1) fb.active = false;
         }
-
         platforms.forEach(plat => {
-            if (fb.active && 
-                fb.x + fb.w > plat.x && fb.x < plat.x + plat.w &&
-                fb.y + fb.h > plat.y && fb.y < plat.y + plat.h) {
+            if (fb.active && fb.x + fb.w > plat.x && fb.x < plat.x + plat.w && fb.y + fb.h > plat.y && fb.y < plat.y + plat.h) {
                 if (fb.vy > 0 && fb.y + fb.h - fb.vy <= plat.y) {
                     fb.y = plat.y - fb.h;
                     fb.vy = -Math.abs(fb.vy) * 0.8;
@@ -53,19 +48,13 @@ export const updateFireballs = (
                 }
             }
         });
-
-        if (fb.x < cameraX - 100 || fb.x > cameraX + canvasWidth + 100) {
-            fb.active = false;
-            return;
-        }
-
+        if (fb.x < cameraX - 100 || fb.x > cameraX + canvasWidth + 100) { fb.active = false; return; }
         blocks.forEach(block => {
             if (fb.active && rectIntersect(fb, block)) {
                 fb.active = false;
                 createParticles(fb.x, fb.y + fb.h/2, '#e67e22', 5, 2);
             }
         });
-
         enemies.forEach(enemy => {
             if (fb.active && enemy.alive && rectIntersect(fb, enemy)) {
                 fb.active = false;
@@ -102,10 +91,7 @@ export const updateEnemyProjectiles = (
         if (!p.active) return;
         p.x += p.vx;
         p.y += p.vy;
-        if (p.x < cameraX - 100 || p.x > cameraX + canvasWidth + 100) {
-            p.active = false;
-            return;
-        }
+        if (p.x < cameraX - 100 || p.x > cameraX + canvasWidth + 100) { p.active = false; return; }
         if (rectIntersect(p, player)) {
             p.active = false;
             onPlayerDamage();
@@ -157,7 +143,6 @@ export const updatePlayer = (
         player.vx = 0;
         if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed;
         if (keys['ArrowRight']) player.vx = effectiveMoveSpeed;
-
         if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
         if (player.isGrounded) {
             player.coyoteTimer = 6;
@@ -165,7 +150,6 @@ export const updatePlayer = (
         } else if (player.coyoteTimer > 0) {
             player.coyoteTimer--;
         }
-
         if (player.jumpBufferTimer > 0) {
             if (player.coyoteTimer > 0) {
                 player.vy = effectiveJumpStrength;
@@ -203,7 +187,6 @@ export const updatePlayer = (
     const prevY = player.y;
     player.y += player.vy;
     player.isGrounded = false;
-
     if (player.y + currentHeight > groundY) {
         player.y = groundY - currentHeight;
         player.vy = 0;
@@ -310,14 +293,19 @@ export const updateEnemies = (
 ) => {
     enemies.forEach(enemy => {
         if (!enemy.alive) return;
+        
+        // Initial startX for patrol/flying
+        if ((enemy as any).startX === undefined) (enemy as any).startX = enemy.x;
+
         if (enemy.type === 'patrol' && enemy.vx !== undefined) {
             enemy.x += enemy.vx;
-            // No simple bounds here, would need original startX
+            if (Math.abs(enemy.x - (enemy as any).startX) > 300) enemy.vx *= -1;
         } else if (enemy.type === 'flying' && enemy.vx !== undefined) {
             enemy.x += enemy.vx;
             if (enemy.startY !== undefined) {
                 enemy.y = enemy.startY + Math.sin(frameCount * 0.05) * 50;
             }
+            if (Math.abs(enemy.x - (enemy as any).startX) > 600) enemy.vx *= -1;
         } else if (enemy.type === 'turret') {
             if (frameCount - (enemy.lastShot || 0) > 120) {
                 const dx = player.x - enemy.x;
@@ -347,9 +335,9 @@ export const updateEnemies = (
                 }
             }
         }
+
         if (rectIntersect(player, enemy)) {
-            const isGiant = player.giantTimer > 0;
-            if (isGiant) {
+            if (player.giantTimer > 0) {
                 enemy.alive = false;
                 scoreRef.current += 100;
                 setScore(scoreRef.current);
@@ -358,7 +346,11 @@ export const updateEnemies = (
                 if (audioEnabled) audioManager.playBop();
                 return;
             }
-            if (player.vy > 0 && player.y < enemy.y && enemy.type !== 'spikes') {
+
+            // --- HIT DETECTION ---
+            // If falling and above enemy head
+            const prevPlayerBottom = player.y + player.height - player.vy;
+            if (player.vy > 0 && prevPlayerBottom <= enemy.y && enemy.type !== 'spikes') {
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {
                     enemy.hp--;
                     player.vy = -12;
@@ -386,7 +378,7 @@ export const updateEnemies = (
                 createParticles(enemy.x + 20, enemy.y + 20, '#e74c3c', 20, 5);
                 startShake(15, 5);
                 if (audioEnabled) audioManager.playBop();
-            } else if (player.invincibilityFrames === 0) {
+            } else {
                 onPlayerDamage();
             }
         }
