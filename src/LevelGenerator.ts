@@ -8,7 +8,7 @@ const LOOT_TABLE: ('bacon' | 'carrot' | 'shoes' | 'spring' | 'burger')[] = [
     'burger'                            // 2% (approx)
 ];
 
-const getRandomPrize = () => LOOT_TABLE[Math.floor(Math.random() * LOOT_TABLE.length)];
+export const getRandomPrize = () => LOOT_TABLE[Math.floor(Math.random() * LOOT_TABLE.length)];
 
 const BG_PALETTES = [
     { sky: '#1a1a2e', mountain: '#16213e', mid: '#0f3460' },

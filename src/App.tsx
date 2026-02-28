@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { audioManager } from './AudioManager';
 import type { Player, Enemy, Chest, Platform, Block, Particle, Prize, Fireball, EnemyProjectile, Level, Warp } from './types';
-import { generateLevel, generateBonusRoom } from './LevelGenerator';
+import { generateLevel, generateBonusRoom, getRandomPrize } from './LevelGenerator';
 import { updatePlayer, updateEnemies, updatePrizes, updateFireballs, updateEnemyProjectiles, rectIntersect } from './physics';
 import * as Renderer from './renderer';
 
@@ -88,9 +88,19 @@ const GameCanvas: React.FC = () => {
 
     let frameCount = 0;
     let cameraX = 0;
+    
+    // Determine player start pos
+    let startX = 50;
+    let startY = 100;
+    if (isBonusRoom) {
+        startX = 50; startY = 100;
+    } else if (savedPlayerPosRef.current) {
+        startX = savedPlayerPosRef.current.x;
+        startY = savedPlayerPosRef.current.y;
+    }
+
     const player: Player = {
-      x: savedPlayerPosRef.current?.x || 50, 
-      y: savedPlayerPosRef.current?.y || 100, 
+      x: startX, y: startY, 
       width: 40, height: 60, vx: 0, vy: 0,
       isGrounded: false, isRolling: false, rollTimer: 0,
       invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
@@ -128,10 +138,11 @@ const GameCanvas: React.FC = () => {
             savedMainLevelRef.current = level;
             savedPlayerPosRef.current = { x: player.x, y: player.y };
             setIsBonusRoom(true);
-            setRetryKey(prev => prev + 1); // Trigger effect reload
+            setRetryKey(prev => prev + 1);
         } else {
             // Return to main
             setIsBonusRoom(false);
+            // savedPlayerPosRef.current stays what it was to restore main pos
             setRetryKey(prev => prev + 1);
         }
     };
@@ -199,6 +210,13 @@ const GameCanvas: React.FC = () => {
               createParticles(chest.x + 20, chest.y + 20, '#f1c40f', 15, 4);
               startShake(10, 3);
               if (audioEnabled) audioManager.playChest();
+
+              prizes.push({
+                  x: chest.x + 5, y: chest.y - 20,
+                  w: 30, h: 30, vx: (Math.random() - 0.5) * 2, vy: -5,
+                  type: getRandomPrize(), collected: false
+              });
+
               if (chest.type === 'health') { livesRef.current++; setLives(livesRef.current); }
               else if (chest.type === 'speed') player.speedBoostTimer = 300;
           }
