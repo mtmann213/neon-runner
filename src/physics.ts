@@ -142,7 +142,7 @@ export const updatePlayer = (
     if (player.invincibilityFrames > 0) player.invincibilityFrames--;
     if (player.speedBoostTimer > 0) player.speedBoostTimer--;
     if (player.jumpBoostTimer > 0) player.jumpBoostTimer--;
-    if (player.bigTimer > 0) player.bigTimer--;
+    // bigTimer no longer decrements (permanent)
     if (player.giantTimer > 0) player.giantTimer--;
     if (player.fireballTimer > 0) player.fireballTimer--;
     if (player.wingTimer > 0) player.wingTimer--;

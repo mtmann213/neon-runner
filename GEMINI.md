@@ -36,7 +36,8 @@ A highly polished, React-based 2D Action Platformer focusing on "game juice," re
   - **Bosses:** Massive 100x100 units spawning every 3rd level with scaling HP and jumping AI.
 
 ### 3. Power-ups (Weighted Randomized Drops)
-- **Bacon:** Makes player "Big" (100px height) for 10 seconds.
+- **Bacon:** Makes player "Big" (100px height) permanently (until hit or death).
+
 - **Giant Burger:** Makes player "Giantic" (360px height), invincible, and able to walk through blocks.
 - **Wing:** Enables flight for 10 seconds (Hold Jump to flap).
 - **Gold Carrot:** Grants an extra permanent life.
