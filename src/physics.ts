@@ -1,11 +1,13 @@
-import type { Player, Enemy, Platform, Block } from './types';
+import type { Player, Enemy, Platform, Block, Prize } from './types';
 import { audioManager } from './AudioManager';
 
 export const rectIntersect = (r1: any, r2: any) => {
-    const r1Height = (r1 as any).isRolling ? 30 : (r1.height || (r1 as any).h);
-    const r2Height = (r2 as any).isRolling ? 30 : (r2.height || (r2 as any).h);
-    return r1.x < r2.x + (r2.width || r2.w) &&
-           r1.x + (r1.width || r1.w) > r2.x &&
+    const r1Width = r1.width || r1.w;
+    const r1Height = (r1 as any).isRolling ? 30 : (r1.height || r1.h);
+    const r2Width = r2.width || r2.w;
+    const r2Height = (r2 as any).isRolling ? 30 : (r2.height || r2.h);
+    return r1.x < r2.x + r2Width &&
+           r1.x + r1Width > r2.x &&
            r1.y < r2.y + r2Height &&
            r1.y + r1Height > r2.y;
 };
@@ -15,6 +17,7 @@ export const updatePlayer = (
     keys: { [key: string]: boolean },
     platforms: Platform[],
     blocks: Block[],
+    prizes: Prize[],
     gravity: number,
     jumpStrength: number,
     moveSpeed: number,
@@ -26,36 +29,45 @@ export const updatePlayer = (
     setScore: (s: number) => void,
     startShake: (d: number, i: number) => void
 ) => {
-    const currentHeight = player.isRolling ? 30 : 60;
+    // Timers
+    if (player.invincibilityFrames > 0) player.invincibilityFrames--;
+    if (player.speedBoostTimer > 0) player.speedBoostTimer--;
+    if (player.jumpBoostTimer > 0) player.jumpBoostTimer--;
+    if (player.bigTimer > 0) player.bigTimer--;
+
+    const currentHeight = player.isRolling ? 30 : (player.bigTimer > 0 ? 100 : 60);
+    const currentWidth = player.bigTimer > 0 ? 60 : 40;
+    player.width = currentWidth;
+    player.height = player.bigTimer > 0 ? 100 : 60;
+
+    const effectiveMoveSpeed = player.speedBoostTimer > 0 ? moveSpeed * 1.6 : moveSpeed;
+    const effectiveJumpStrength = player.jumpBoostTimer > 0 ? jumpStrength * 1.5 : jumpStrength;
 
     if (keys['ShiftLeft'] && player.isGrounded && !player.isRolling) {
         player.isRolling = true;
         player.rollTimer = 20;
         player.vx = player.facingRight ? rollSpeed : -rollSpeed;
-        createParticles(player.x + 20, groundY, '#7d5c34', 10, 3);
+        createParticles(player.x + player.width/2, groundY, '#7d5c34', 10, 3);
     }
 
     if (player.isRolling) {
         player.rollTimer--;
         if (player.rollTimer <= 0) player.isRolling = false;
-        // Particle trail
-        // if (frameCount % 2 === 0) ... (this needs frameCount)
     } else {
         player.vx = 0;
-        if (keys['ArrowLeft']) player.vx = -moveSpeed;
-        if (keys['ArrowRight']) player.vx = moveSpeed;
+        if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed;
+        if (keys['ArrowRight']) player.vx = effectiveMoveSpeed;
 
-        // Jump Logic
         if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
         if (player.isGrounded) player.coyoteTimer = 6;
         else if (player.coyoteTimer > 0) player.coyoteTimer--;
 
         if (player.jumpBufferTimer > 0 && player.coyoteTimer > 0) {
-            player.vy = jumpStrength;
+            player.vy = effectiveJumpStrength;
             player.isGrounded = false;
             player.coyoteTimer = 0;
             player.jumpBufferTimer = 0;
-            createParticles(player.x + 20, player.y + currentHeight, '#7d5c34', 8, 2);
+            createParticles(player.x + player.width/2, player.y + currentHeight, '#7d5c34', 8, 2);
             if (audioEnabled) audioManager.playJump();
         }
     }
@@ -97,9 +109,21 @@ export const updatePlayer = (
                     obj.hit = true;
                     scoreRef.current += 200;
                     setScore(scoreRef.current);
-                    createParticles(obj.x + 20, obj.y, '#f1c40f', 10, 2);
+                    createParticles(obj.x + obj.w/2, obj.y, '#f1c40f', 10, 2);
                     startShake(5, 2);
                     if (audioEnabled) audioManager.playCoin();
+                    
+                    if (obj.prizeType) {
+                        prizes.push({
+                            x: obj.x + (obj.w - 30)/2,
+                            y: obj.y,
+                            w: 30, h: 30,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: -8,
+                            type: obj.prizeType,
+                            collected: false
+                        });
+                    }
                 }
             }
         }
@@ -112,6 +136,33 @@ export const updatePlayer = (
                 player.vy = 0;
                 player.isGrounded = true;
             }
+        }
+    });
+};
+
+export const updatePrizes = (
+    prizes: Prize[],
+    player: Player,
+    groundY: number,
+    gravity: number,
+    onCollect: (prize: Prize) => void
+) => {
+    prizes.forEach(prize => {
+        if (prize.collected) return;
+
+        prize.vy += gravity;
+        prize.x += prize.vx;
+        prize.y += prize.vy;
+
+        if (prize.y + prize.h > groundY) {
+            prize.y = groundY - prize.h;
+            prize.vy = 0;
+            prize.vx *= 0.9;
+        }
+
+        if (rectIntersect(player, prize)) {
+            prize.collected = true;
+            onCollect(prize);
         }
     });
 };
@@ -134,7 +185,6 @@ export const updateEnemies = (
 
         if (enemy.type === 'patrol' && enemy.vx !== undefined) {
             enemy.x += enemy.vx;
-            // Simplified patrol bounds for refactor
             if (enemy.x > (enemy.id < 100 ? enemy.id * 800 + 400 : 8000) || 
                 enemy.x < (enemy.id < 100 ? enemy.id * 800 - 400 : 0)) enemy.vx *= -1;
         } else if (enemy.type === 'boss' && enemy.vx !== undefined && enemy.vy !== undefined) {
@@ -154,6 +204,7 @@ export const updateEnemies = (
         }
 
         if (rectIntersect(player, enemy)) {
+            const currentHeight = player.isRolling ? 30 : (player.bigTimer > 0 ? 100 : 60);
             if (player.vy > 0 && player.y < enemy.y && enemy.type !== 'spikes') {
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {
                     enemy.hp--;

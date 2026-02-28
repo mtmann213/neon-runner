@@ -1,4 +1,4 @@
-import type { Player, Enemy } from './types';
+import type { Player, Enemy, Prize } from './types';
 
 export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
     ctx.fillStyle = '#e74c3c'; ctx.beginPath();
@@ -15,17 +15,31 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
     const walkCycle = Math.sin(frameCount * 0.2) * 10;
     ctx.save();
     if (!p.facingRight) { ctx.translate(p.x + p.width, p.y); ctx.scale(-1, 1); } else { ctx.translate(p.x, p.y); }
+    
     if (p.invincibilityFrames % 10 < 5) {
         if (p.isRolling) {
-            ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.arc(20, 15, 15, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#f1c40f'; 
+            ctx.beginPath(); 
+            ctx.arc(p.width/2, p.height/2, p.width/2, 0, Math.PI * 2); 
+            ctx.fill();
         } else {
-            ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : '#2980b9'; ctx.fillRect(10, 20, 20, 30);
-            ctx.fillStyle = '#f3e5ab'; ctx.fillRect(12, 5, 16, 16);
-            ctx.fillStyle = 'black'; ctx.fillRect(22, 9, 3, 3);
-            ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
+            // Body
+            ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#2980b9');
+            ctx.fillRect(p.width*0.25, p.height*0.33, p.width*0.5, p.height*0.5);
+            
+            // Head
+            ctx.fillStyle = '#f3e5ab';
+            ctx.fillRect(p.width*0.3, p.height*0.08, p.width*0.4, p.height*0.26);
+            
+            // Eye
+            ctx.fillStyle = 'black';
+            ctx.fillRect(p.width*0.55, p.height*0.15, p.width*0.075, p.width*0.075);
+            
+            // Legs
+            ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = p.width * 0.1;
             const legOff = Math.abs(p.vx) > 0 ? walkCycle : 0;
-            ctx.beginPath(); ctx.moveTo(15, 50); ctx.lineTo(15 + legOff, 60); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(25, 50); ctx.lineTo(25 - legOff, 60); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(p.width*0.375, p.height*0.83); ctx.lineTo(p.width*0.375 + legOff, p.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(p.width*0.625, p.height*0.83); ctx.lineTo(p.width*0.625 - legOff, p.height); ctx.stroke();
         }
     }
     ctx.restore();
@@ -79,5 +93,36 @@ export const drawBackground = (
     ctx.fillStyle = 'white';
     clouds.forEach(c => {
         ctx.beginPath(); ctx.arc(c.x - cameraX * 0.1, c.y, c.size, 0, Math.PI * 2); ctx.fill();
+    });
+};
+
+export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
+    prizes.forEach(p => {
+        if (p.collected) return;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        
+        if (p.type === 'bacon') {
+            ctx.fillStyle = '#ff9999'; ctx.fillRect(0, 5, 30, 10);
+            ctx.fillStyle = '#ff0000'; ctx.fillRect(0, 15, 30, 5);
+            ctx.fillStyle = '#ff9999'; ctx.fillRect(0, 20, 30, 5);
+        } else if (p.type === 'carrot') {
+            ctx.fillStyle = '#f1c40f'; // Gold
+            ctx.beginPath(); ctx.moveTo(15, 30); ctx.lineTo(5, 5); ctx.lineTo(25, 5); ctx.fill();
+            ctx.fillStyle = '#2ecc71'; ctx.fillRect(12, 0, 6, 5);
+        } else if (p.type === 'shoes') {
+            ctx.fillStyle = '#3498db'; ctx.fillRect(5, 15, 20, 10);
+            ctx.fillRect(15, 5, 10, 15);
+            ctx.fillStyle = '#f1c40f'; // Lightning
+            ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(20, 10); ctx.lineTo(30, 10); ctx.lineTo(22, 25); ctx.stroke();
+        } else if (p.type === 'spring') {
+            ctx.strokeStyle = '#95a5a6'; ctx.lineWidth = 3;
+            ctx.beginPath();
+            for(let i=0; i<4; i++) {
+                ctx.arc(15, 25 - i*6, 10, 0, Math.PI, false);
+            }
+            ctx.stroke();
+        }
+        ctx.restore();
     });
 };

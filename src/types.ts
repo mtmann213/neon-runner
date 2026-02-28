@@ -47,6 +47,18 @@ export interface Block {
   w: number;
   h: number;
   hit: boolean;
+  prizeType?: 'bacon' | 'carrot' | 'shoes' | 'spring';
+}
+
+export interface Prize {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  vx: number;
+  vy: number;
+  type: 'bacon' | 'carrot' | 'shoes' | 'spring';
+  collected: boolean;
 }
 
 export interface Level {
@@ -69,6 +81,8 @@ export interface Player {
   rollTimer: number;
   invincibilityFrames: number;
   speedBoostTimer: number;
+  jumpBoostTimer: number;
+  bigTimer: number;
   facingRight: boolean;
   coyoteTimer: number;
   jumpBufferTimer: number;

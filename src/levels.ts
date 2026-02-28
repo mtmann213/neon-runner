@@ -22,9 +22,9 @@ export const LEVELS: Level[] = [
       { x: 2100, y: 340, w: 200, h: 20 },
     ],
     blocks: [
-      { x: 700, y: 300, w: 40, h: 40, hit: false },
-      { x: 1000, y: 220, w: 40, h: 40, hit: false },
-      { x: 2200, y: 200, w: 40, h: 40, hit: false },
+      { x: 700, y: 300, w: 40, h: 40, hit: false, prizeType: 'bacon' },
+      { x: 1000, y: 220, w: 40, h: 40, hit: false, prizeType: 'shoes' },
+      { x: 2200, y: 200, w: 40, h: 40, hit: false, prizeType: 'carrot' },
     ]
   },
   {
@@ -47,8 +47,8 @@ export const LEVELS: Level[] = [
           { x: 1400, y: 260, w: 120, h: 20 },
       ],
       blocks: [
-          { x: 1150, y: 240, w: 40, h: 40, hit: false },
-          { x: 1450, y: 160, w: 40, h: 40, hit: false },
+          { x: 1150, y: 240, w: 40, h: 40, hit: false, prizeType: 'spring' },
+          { x: 1450, y: 160, w: 40, h: 40, hit: false, prizeType: 'bacon' },
       ]
     },
     {
@@ -74,10 +74,10 @@ export const LEVELS: Level[] = [
           { x: 4400, y: 250, w: 300, h: 20 },
       ],
       blocks: [
-          { x: 1150, y: 240, w: 40, h: 40, hit: false },
-          { x: 1450, y: 160, w: 40, h: 40, hit: false },
-          { x: 4150, y: 200, w: 40, h: 40, hit: false },
-          { x: 4550, y: 100, w: 40, h: 40, hit: false },
+          { x: 1150, y: 240, w: 40, h: 40, hit: false, prizeType: 'carrot' },
+          { x: 1450, y: 160, w: 40, h: 40, hit: false, prizeType: 'spring' },
+          { x: 4150, y: 200, w: 40, h: 40, hit: false, prizeType: 'shoes' },
+          { x: 4550, y: 100, w: 40, h: 40, hit: false, prizeType: 'bacon' },
       ]
     }
 ];

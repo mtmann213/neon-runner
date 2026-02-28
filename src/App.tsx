@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { audioManager } from './AudioManager';
-import type { Player, Enemy, Chest, Platform, Block, Particle } from './types';
+import type { Player, Enemy, Chest, Platform, Block, Particle, Prize } from './types';
 import { LEVELS } from './levels';
-import { updatePlayer, updateEnemies, rectIntersect } from './physics';
+import { updatePlayer, updateEnemies, updatePrizes, rectIntersect } from './physics';
 import * as Renderer from './renderer';
 
 const GameCanvas: React.FC = () => {
@@ -43,6 +43,7 @@ const GameCanvas: React.FC = () => {
     let chests: Chest[] = level.chests.map(c => ({ ...c, y: groundY - c.h }));
     let platforms: Platform[] = level.platforms || [];
     let blocks: Block[] = (level.blocks || []).map(b => ({ ...b }));
+    let prizes: Prize[] = [];
     
     gameStateRef.current = 'playing';
     setGameState('playing');
@@ -80,8 +81,8 @@ const GameCanvas: React.FC = () => {
     const player: Player = {
       x: 50, y: 100, width: 40, height: 60, vx: 0, vy: 0,
       isGrounded: false, isRolling: false, rollTimer: 0,
-      invincibilityFrames: 0, speedBoostTimer: 0, facingRight: true,
-      coyoteTimer: 0, jumpBufferTimer: 0
+      invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
+      facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0
     };
 
     const keys: { [key: string]: boolean } = {};
@@ -100,8 +101,6 @@ const GameCanvas: React.FC = () => {
       frameCount++;
       
       if (shakeTimer > 0) shakeTimer--;
-      if (player.invincibilityFrames > 0) player.invincibilityFrames--;
-      if (player.speedBoostTimer > 0) { player.speedBoostTimer--; moveSpeed = 8; } else { moveSpeed = 5; }
 
       if (player.x > worldWidth - 120) {
         gameStateRef.current = 'won';
@@ -110,12 +109,24 @@ const GameCanvas: React.FC = () => {
       }
 
       updatePlayer(
-        player, keys, platforms, blocks, gravity, jumpStrength, moveSpeed, rollSpeed, 
+        player, keys, platforms, blocks, prizes, gravity, jumpStrength, moveSpeed, rollSpeed, 
         groundY, audioEnabled, createParticles, scoreRef, setScore, startShake
       );
 
+      updatePrizes(prizes, player, groundY, gravity, (prize) => {
+          scoreRef.current += 500;
+          setScore(scoreRef.current);
+          createParticles(prize.x + 15, prize.y + 15, '#f1c40f', 20, 4);
+          if (audioEnabled) audioManager.playChest();
+          
+          if (prize.type === 'bacon') player.bigTimer = 600;
+          else if (prize.type === 'carrot') { livesRef.current++; setLives(livesRef.current); }
+          else if (prize.type === 'shoes') player.speedBoostTimer = 600;
+          else if (prize.type === 'spring') player.jumpBoostTimer = 600;
+      });
+
       if (player.isRolling && frameCount % 2 === 0) {
-          createParticles(player.x + 20, groundY, '#7d5c34', 2, 1);
+          createParticles(player.x + player.width/2, groundY, '#7d5c34', 2, 1);
       }
 
       updateEnemies(
@@ -124,7 +135,7 @@ const GameCanvas: React.FC = () => {
           livesRef.current--;
           setLives(livesRef.current);
           player.invincibilityFrames = 60;
-          createParticles(player.x + 20, player.y + 20, '#3498db', 10, 3);
+          createParticles(player.x + player.width/2, player.y + player.height/2, '#3498db', 10, 3);
           startShake(20, 10);
           if (audioEnabled) audioManager.playDamage();
           if (livesRef.current <= 0) {
@@ -172,7 +183,6 @@ const GameCanvas: React.FC = () => {
       ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, groundY, worldWidth, 10);
       grass.forEach(g => { ctx.fillStyle = '#27ae60'; ctx.fillRect(g.x, g.y - g.size, 4, g.size); });
       
-      // End Flag
       ctx.fillStyle = '#2c3e50'; ctx.fillRect(worldWidth - 100, groundY - 150, 10, 150);
       ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.moveTo(worldWidth - 100, groundY - 150);
       ctx.lineTo(worldWidth - 40, groundY - 120); ctx.lineTo(worldWidth - 100, groundY - 90); ctx.fill();
@@ -196,6 +206,7 @@ const GameCanvas: React.FC = () => {
           if (!b.hit) { ctx.fillStyle = 'white'; ctx.font = 'bold 30px Arial'; ctx.fillText('$', b.x+10, b.y+32); }
       });
 
+      Renderer.drawPrizes(ctx, prizes);
       enemies.forEach(e => Renderer.drawEnemy(ctx, e, frameCount));
       Renderer.drawBoy(ctx, player, frameCount);
       ctx.restore();
@@ -260,9 +271,9 @@ const GameCanvas: React.FC = () => {
       )}
 
       <div className="instructions">
-        <h3>Architecture Refactor Complete!</h3>
-        <p>Code is now split into: types.ts, levels.ts, physics.ts, and renderer.ts.</p>
-        <p>This makes the codebase much more maintainable and scalable!</p>
+        <h3>Power-ups Added!</h3>
+        <p>Bacon: Get Big! | Gold Carrot: Extra Life!</p>
+        <p>Lightning Shoes: Super Speed! | Spring: High Jumps!</p>
       </div>
     </div>
   );
