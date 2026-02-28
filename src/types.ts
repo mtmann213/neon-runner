@@ -61,6 +61,15 @@ export interface Prize {
   collected: boolean;
 }
 
+export interface Fireball {
+  x: number;
+  y: number;
+  vx: number;
+  w: number;
+  h: number;
+  active: boolean;
+}
+
 export interface BackgroundLayer {
   color: string;
   speed: number;

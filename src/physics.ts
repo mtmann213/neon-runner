@@ -1,4 +1,4 @@
-import type { Player, Enemy, Platform, Block, Prize } from './types';
+import type { Player, Enemy, Platform, Block, Prize, Fireball } from './types';
 import { audioManager } from './AudioManager';
 
 export const rectIntersect = (r1: any, r2: any) => {
@@ -10,6 +10,63 @@ export const rectIntersect = (r1: any, r2: any) => {
            r1.x + r1Width > r2.x &&
            r1.y < r2.y + r2Height &&
            r1.y + r1Height > r2.y;
+};
+
+export const updateFireballs = (
+    fireballs: Fireball[],
+    enemies: Enemy[],
+    blocks: Block[],
+    cameraX: number,
+    canvasWidth: number,
+    audioEnabled: boolean,
+    createParticles: (x: number, y: number, color: string, count: number, speed?: number) => void,
+    scoreRef: React.MutableRefObject<number>,
+    setScore: (s: number) => void,
+    startShake: (d: number, i: number) => void
+) => {
+    fireballs.forEach(fb => {
+        if (!fb.active) return;
+        fb.x += fb.vx;
+
+        // Deactivate if off-screen
+        if (fb.x < cameraX || fb.x > cameraX + canvasWidth) {
+            fb.active = false;
+            return;
+        }
+
+        // Collision with blocks
+        blocks.forEach(block => {
+            if (fb.active && rectIntersect(fb, block)) {
+                fb.active = false;
+                createParticles(fb.x, fb.y + fb.h/2, '#e67e22', 5, 2);
+            }
+        });
+
+        // Collision with enemies
+        enemies.forEach(enemy => {
+            if (fb.active && enemy.alive && rectIntersect(fb, enemy)) {
+                fb.active = false;
+                createParticles(fb.x, fb.y + fb.h/2, '#e67e22', 15, 3);
+                
+                if (enemy.type === 'boss' && enemy.hp !== undefined) {
+                    enemy.hp--;
+                    startShake(10, 4);
+                    if (audioEnabled) audioManager.playBossHit();
+                    if (enemy.hp <= 0) {
+                        enemy.alive = false;
+                        scoreRef.current += 1000;
+                        setScore(scoreRef.current);
+                    }
+                } else {
+                    enemy.alive = false;
+                    scoreRef.current += 50;
+                    setScore(scoreRef.current);
+                    startShake(5, 2);
+                    if (audioEnabled) audioManager.playBop();
+                }
+            }
+        });
+    });
 };
 
 export const updatePlayer = (

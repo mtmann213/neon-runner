@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { audioManager } from './AudioManager';
-import type { Player, Enemy, Chest, Platform, Block, Particle, Prize } from './types';
+import type { Player, Enemy, Chest, Platform, Block, Particle, Prize, Fireball } from './types';
 import { LEVELS } from './levels';
-import { updatePlayer, updateEnemies, updatePrizes, rectIntersect } from './physics';
+import { updatePlayer, updateEnemies, updatePrizes, updateFireballs, rectIntersect } from './physics';
 import * as Renderer from './renderer';
 
 const GameCanvas: React.FC = () => {
@@ -44,6 +44,7 @@ const GameCanvas: React.FC = () => {
     let platforms: Platform[] = level.platforms || [];
     let blocks: Block[] = (level.blocks || []).map(b => ({ ...b }));
     let prizes: Prize[] = [];
+    let fireballs: Fireball[] = [];
     
     gameStateRef.current = 'playing';
     setGameState('playing');
@@ -85,6 +86,17 @@ const GameCanvas: React.FC = () => {
         if (e.code === 'ArrowRight') player.facingRight = true;
         if (e.code === 'ArrowLeft') player.facingRight = false;
         if (e.code === 'Space') player.jumpBufferTimer = 10;
+        
+        if (e.code === 'KeyF' && gameStateRef.current === 'playing') {
+            fireballs.push({
+                x: player.x + (player.facingRight ? player.width : -20),
+                y: player.y + player.height / 2 - 10,
+                vx: player.facingRight ? 10 : -10,
+                w: 20, h: 20,
+                active: true
+            });
+            if (audioEnabled) audioManager.playShoot();
+        }
     };
     const handleKeyUp = (e: KeyboardEvent) => keys[e.code] = false;
     window.addEventListener('keydown', handleKeyDown);
@@ -105,6 +117,11 @@ const GameCanvas: React.FC = () => {
       updatePlayer(
         player, keys, platforms, blocks, prizes, gravity, jumpStrength, moveSpeed, rollSpeed, 
         groundY, audioEnabled, createParticles, scoreRef, setScore, startShake
+      );
+
+      updateFireballs(
+          fireballs, enemies, blocks, cameraX, canvas.width, audioEnabled, 
+          createParticles, scoreRef, setScore, startShake
       );
 
       updatePrizes(prizes, player, groundY, gravity, (prize) => {
@@ -201,6 +218,7 @@ const GameCanvas: React.FC = () => {
       });
 
       Renderer.drawPrizes(ctx, prizes);
+      Renderer.drawFireballs(ctx, fireballs);
       enemies.forEach(e => Renderer.drawEnemy(ctx, e, frameCount));
       Renderer.drawBoy(ctx, player, frameCount);
       ctx.restore();
@@ -235,6 +253,7 @@ const GameCanvas: React.FC = () => {
             <p>ARROWS to Move</p>
             <p>SPACE to Jump</p>
             <p>SHIFT to Roll</p>
+            <p>F to SHOOT FIREBALL</p>
           </div>
         </div>
       )}
@@ -265,9 +284,9 @@ const GameCanvas: React.FC = () => {
       )}
 
       <div className="instructions">
-        <h3>Power-ups Added!</h3>
+        <h3>Fireballs Active!</h3>
+        <p>Press 'F' to shoot. Deals damage to enemies and bosses.</p>
         <p>Bacon: Get Big! | Gold Carrot: Extra Life!</p>
-        <p>Lightning Shoes: Super Speed! | Spring: High Jumps!</p>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import type { Player, Enemy, Prize, BackgroundLayer } from './types';
+import type { Player, Enemy, Prize, BackgroundLayer, Fireball } from './types';
 
 export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
     ctx.save();
@@ -151,6 +151,31 @@ export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
             }
             ctx.stroke();
         }
+        ctx.restore();
+    });
+};
+
+export const drawFireballs = (ctx: CanvasRenderingContext2D, fireballs: Fireball[]) => {
+    fireballs.forEach(fb => {
+        if (!fb.active) return;
+        ctx.save();
+        ctx.translate(fb.x, fb.y);
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#e67e22';
+        ctx.fillStyle = '#f39c12';
+        
+        // Inner core
+        ctx.beginPath();
+        ctx.arc(fb.w/2, fb.h/2, fb.w/2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Outer glow/flicker
+        ctx.fillStyle = '#e67e22';
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.arc(fb.w/2, fb.h/2, fb.w/2 + Math.random() * 5, 0, Math.PI * 2);
+        ctx.fill();
+        
         ctx.restore();
     });
 };
