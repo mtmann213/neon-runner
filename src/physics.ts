@@ -116,12 +116,14 @@ export const updatePlayer = (
     if (player.speedBoostTimer > 0) player.speedBoostTimer--;
     if (player.jumpBoostTimer > 0) player.jumpBoostTimer--;
     if (player.bigTimer > 0) player.bigTimer--;
+    if (player.giantTimer > 0) player.giantTimer--;
     if (player.fireballTimer > 0) player.fireballTimer--;
 
-    const currentHeight = player.isRolling ? 30 : (player.bigTimer > 0 ? 100 : 60);
-    const currentWidth = player.bigTimer > 0 ? 60 : 40;
+    const isGiant = player.giantTimer > 0;
+    const currentHeight = player.isRolling ? 30 : (isGiant ? 180 : (player.bigTimer > 0 ? 100 : 60));
+    const currentWidth = isGiant ? 120 : (player.bigTimer > 0 ? 60 : 40);
     player.width = currentWidth;
-    player.height = player.bigTimer > 0 ? 100 : 60;
+    player.height = currentHeight;
 
     const effectiveMoveSpeed = player.speedBoostTimer > 0 ? moveSpeed * 1.6 : moveSpeed;
     const effectiveJumpStrength = player.jumpBoostTimer > 0 ? jumpStrength * 1.5 : jumpStrength;
@@ -169,14 +171,17 @@ export const updatePlayer = (
     }
 
     player.vy += gravity;
+    // X Collision
     player.x += player.vx;
-    blocks.forEach(obj => {
-        if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
-            player.y + currentHeight > obj.y && player.y < obj.y + obj.h) {
-            if (player.vx > 0) player.x = obj.x - player.width;
-            else if (player.vx < 0) player.x = obj.x + obj.w;
-        }
-    });
+    if (!isGiant) {
+        blocks.forEach(obj => {
+            if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
+                player.y + currentHeight > obj.y && player.y < obj.y + obj.h) {
+                if (player.vx > 0) player.x = obj.x - player.width;
+                else if (player.vx < 0) player.x = obj.x + obj.w;
+            }
+        });
+    }
 
     const prevY = player.y;
     player.y += player.vy;
@@ -188,38 +193,59 @@ export const updatePlayer = (
         player.isGrounded = true;
     }
 
-    blocks.forEach(obj => {
-        if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
-            player.y + currentHeight > obj.y && player.y < obj.y + obj.h) {
-            if (player.vy > 0) {
-                player.y = obj.y - currentHeight;
-                player.vy = 0;
-                player.isGrounded = true;
-            } else if (player.vy < 0) {
-                player.y = obj.y + obj.h;
-                player.vy = 0;
-                if (!obj.hit) {
-                    obj.hit = true;
-                    scoreRef.current += 200;
-                    setScore(scoreRef.current);
-                    createParticles(obj.x + obj.w/2, obj.y, '#f1c40f', 10, 2);
-                    startShake(5, 2);
-                    if (audioEnabled) audioManager.playCoin();
-                    if (obj.prizeType) {
-                        prizes.push({
-                            x: obj.x + (obj.w - 30)/2,
-                            y: obj.y,
-                            w: 30, h: 30,
-                            vx: (Math.random() - 0.5) * 2,
-                            vy: -8,
-                            type: obj.prizeType,
-                            collected: false
-                        });
+    if (!isGiant) {
+        blocks.forEach(obj => {
+            if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
+                player.y + currentHeight > obj.y && player.y < obj.y + obj.h) {
+                if (player.vy > 0) {
+                    player.y = obj.y - currentHeight;
+                    player.vy = 0;
+                    player.isGrounded = true;
+                } else if (player.vy < 0) {
+                    player.y = obj.y + obj.h;
+                    player.vy = 0;
+                    if (!obj.hit) {
+                        obj.hit = true;
+                        scoreRef.current += 200;
+                        setScore(scoreRef.current);
+                        createParticles(obj.x + obj.w/2, obj.y, '#f1c40f', 10, 2);
+                        startShake(5, 2);
+                        if (audioEnabled) audioManager.playCoin();
+                        if (obj.prizeType) {
+                            prizes.push({
+                                x: obj.x + (obj.w - 30)/2,
+                                y: obj.y,
+                                w: 30, h: 30,
+                                vx: (Math.random() - 0.5) * 2,
+                                vy: -8,
+                                type: obj.prizeType,
+                                collected: false
+                            });
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    } else {
+        // Giant still activates blocks but walks through
+        blocks.forEach(obj => {
+            if (!obj.hit && rectIntersect(player, obj)) {
+                obj.hit = true;
+                scoreRef.current += 200;
+                setScore(scoreRef.current);
+                createParticles(obj.x + obj.w/2, obj.y, '#f1c40f', 10, 2);
+                startShake(8, 4);
+                if (audioEnabled) audioManager.playCoin();
+                if (obj.prizeType) {
+                    prizes.push({
+                        x: obj.x + (obj.w - 30)/2, y: obj.y, w: 30, h: 30,
+                        vx: (Math.random() - 0.5) * 2, vy: -8,
+                        type: obj.prizeType, collected: false
+                    });
+                }
+            }
+        });
+    }
 
     platforms.forEach(obj => {
         if (player.x + player.width > obj.x && player.x < obj.x + obj.w) {
@@ -291,6 +317,17 @@ export const updateEnemies = (
             }
         }
         if (rectIntersect(player, enemy)) {
+            const isGiant = player.giantTimer > 0;
+            if (isGiant) {
+                enemy.alive = false;
+                scoreRef.current += 100;
+                setScore(scoreRef.current);
+                createParticles(enemy.x + enemy.w/2, enemy.y + enemy.h/2, enemy.color || '#ff00ff', 30, 6);
+                startShake(10, 5);
+                if (audioEnabled) audioManager.playBop();
+                return;
+            }
+
             if (player.vy > 0 && player.y < enemy.y && enemy.type !== 'spikes') {
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {
                     enemy.hp--;

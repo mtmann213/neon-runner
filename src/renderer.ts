@@ -21,8 +21,8 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
     if (!p.facingRight) { ctx.translate(p.x + p.width, p.y); ctx.scale(-1, 1); } else { ctx.translate(p.x, p.y); }
     
     // Neon Glow
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
+    ctx.shadowBlur = p.giantTimer > 0 ? 40 : 15;
+    ctx.shadowColor = p.giantTimer > 0 ? '#f1c40f' : (p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1'));
 
     if (p.invincibilityFrames % 10 < 5) {
         if (p.isRolling) {
@@ -32,7 +32,12 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
             ctx.fill();
         } else {
             // Body
-            ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
+            if (p.giantTimer > 0) {
+                // Rainbow cycling effect for giant
+                ctx.fillStyle = `hsl(${frameCount * 5 % 360}, 70%, 50%)`;
+            } else {
+                ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
+            }
             ctx.fillRect(p.width*0.25, p.height*0.33, p.width*0.5, p.height*0.5);
             
             // Head
@@ -150,6 +155,19 @@ export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
                 ctx.arc(15, 25 - i*6, 10, 0, Math.PI, false);
             }
             ctx.stroke();
+        } else if (p.type === 'burger') {
+            // Bun Top
+            ctx.fillStyle = '#e67e22';
+            ctx.beginPath(); ctx.arc(15, 10, 15, Math.PI, 0); ctx.fill();
+            // Lettuce
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(0, 10, 30, 3);
+            // Patty
+            ctx.fillStyle = '#795548';
+            ctx.fillRect(0, 13, 30, 6);
+            // Bun Bottom
+            ctx.fillStyle = '#e67e22';
+            ctx.fillRect(0, 19, 30, 6);
         }
         ctx.restore();
     });

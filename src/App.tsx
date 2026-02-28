@@ -77,7 +77,7 @@ const GameCanvas: React.FC = () => {
       x: 50, y: 100, width: 40, height: 60, vx: 0, vy: 0,
       isGrounded: false, isRolling: false, rollTimer: 0,
       invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
-      fireballTimer: 0,
+      giantTimer: 0, fireballTimer: 0,
       facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0, canDoubleJump: true
     };
 
@@ -134,6 +134,10 @@ const GameCanvas: React.FC = () => {
           if (audioEnabled) audioManager.playChest();
           
           if (prize.type === 'bacon') player.bigTimer = 600;
+          else if (prize.type === 'burger') {
+              player.giantTimer = 600;
+              startShake(20, 10);
+          }
           else if (prize.type === 'carrot') { livesRef.current++; setLives(livesRef.current); }
           else if (prize.type === 'shoes') player.speedBoostTimer = 600;
           else if (prize.type === 'spring') player.jumpBoostTimer = 600;

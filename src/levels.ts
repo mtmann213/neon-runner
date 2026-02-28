@@ -28,7 +28,7 @@ export const LEVELS: Level[] = [
     ],
     blocks: [
       { x: 700, y: 300, w: 40, h: 40, hit: false, prizeType: 'bacon' },
-      { x: 1000, y: 220, w: 40, h: 40, hit: false, prizeType: 'shoes' },
+      { x: 1000, y: 220, w: 40, h: 40, hit: false, prizeType: 'burger' },
       { x: 2200, y: 200, w: 40, h: 40, hit: false, prizeType: 'carrot' },
     ]
   },
@@ -91,7 +91,7 @@ export const LEVELS: Level[] = [
       blocks: [
           { x: 1150, y: 240, w: 40, h: 40, hit: false, prizeType: 'carrot' },
           { x: 1450, y: 160, w: 40, h: 40, hit: false, prizeType: 'spring' },
-          { x: 4150, y: 200, w: 40, h: 40, hit: false, prizeType: 'shoes' },
+          { x: 4150, y: 200, w: 40, h: 40, hit: false, prizeType: 'burger' },
           { x: 4550, y: 100, w: 40, h: 40, hit: false, prizeType: 'bacon' },
       ]
     }
