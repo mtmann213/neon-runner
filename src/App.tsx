@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { audioManager } from './AudioManager';
-import type { Player, Enemy, Chest, Platform, Block, Particle, Prize, Fireball } from './types';
-import { LEVELS } from './levels';
-import { updatePlayer, updateEnemies, updatePrizes, updateFireballs, rectIntersect } from './physics';
+import type { Player, Enemy, Chest, Platform, Block, Particle, Prize, Fireball, EnemyProjectile } from './types';
+import { generateLevel } from './LevelGenerator';
+import { updatePlayer, updateEnemies, updatePrizes, updateFireballs, updateEnemyProjectiles, rectIntersect } from './physics';
 import * as Renderer from './renderer';
 
 const GameCanvas: React.FC = () => {
@@ -34,27 +34,26 @@ const GameCanvas: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // --- GAME CONSTANTS ---
     const gravity = 0.5;
     const jumpStrength = -10;
-    let moveSpeed = 5;
+    const moveSpeed = 5;
     const rollSpeed = 10;
     const groundY = canvas.height - 100;
 
-    // Load Level Data
-    const level = LEVELS[currentLevel] || LEVELS[0];
+    // --- PROCEDURAL LEVEL GENERATION ---
+    const level = generateLevel(currentLevel, groundY);
     const worldWidth = level.worldWidth;
-    let enemies: Enemy[] = level.enemies.map(e => ({ ...e, y: groundY - e.h, vy: 0, alive: true }));
-    let chests: Chest[] = level.chests.map(c => ({ ...c, y: groundY - c.h }));
-    let platforms: Platform[] = level.platforms || [];
-    let blocks: Block[] = (level.blocks || []).map(b => ({ ...b }));
+    let enemies: Enemy[] = [...level.enemies];
+    let chests: Chest[] = [...level.chests];
+    let platforms: Platform[] = [...level.platforms];
+    let blocks: Block[] = [...level.blocks];
     let prizes: Prize[] = [];
     let fireballs: Fireball[] = [];
+    let enemyProjectiles: EnemyProjectile[] = [];
     
     gameStateRef.current = 'playing';
     setGameState('playing');
 
-    // Screen Shake State
     let shakeTimer = 0;
     let shakeIntensity = 0;
     const startShake = (duration: number, intensity: number) => {
@@ -72,7 +71,7 @@ const GameCanvas: React.FC = () => {
       }
     };
 
-    const grass = Array.from({ length: 50 }, () => ({
+    const grass = Array.from({ length: 100 }, () => ({
       x: Math.random() * worldWidth, y: groundY, size: 5 + Math.random() * 10
     }));
 
@@ -98,17 +97,33 @@ const GameCanvas: React.FC = () => {
                 x: player.x + (player.facingRight ? player.width : -20),
                 y: player.y + player.height / 2 - 10,
                 vx: player.facingRight ? 10 : -10,
-                vy: -2,
-                w: 20, h: 20,
-                active: true
+                vy: -2, w: 20, h: 20, active: true
             });
-            player.fireballTimer = 180; // 3 seconds @ 60fps
+            player.fireballTimer = 180;
             if (audioEnabled) audioManager.playShoot();
         }
     };
     const handleKeyUp = (e: KeyboardEvent) => keys[e.code] = false;
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+
+    const onPlayerDamage = () => {
+        if (player.invincibilityFrames > 0 || player.giantTimer > 0) return;
+        livesRef.current--;
+        setLives(livesRef.current);
+        player.invincibilityFrames = 60;
+        createParticles(player.x + player.width/2, player.y + player.height/2, '#3498db', 10, 3);
+        startShake(20, 10);
+        if (audioEnabled) audioManager.playDamage();
+        if (livesRef.current <= 0) {
+            gameStateRef.current = 'gameover';
+            setGameState('gameover');
+            if (scoreRef.current > highScore) {
+                setHighScore(scoreRef.current);
+                localStorage.setItem('neonRunnerHighScore', scoreRef.current.toString());
+            }
+        }
+    };
 
     const update = () => {
       if (gameStateRef.current !== 'playing') return;
@@ -117,21 +132,13 @@ const GameCanvas: React.FC = () => {
       if (shakeTimer > 0) shakeTimer--;
 
       if (player.x > worldWidth - 120) {
-        if (currentLevel === LEVELS.length - 1) {
-            gameStateRef.current = 'gameclear';
-            setGameState('gameclear');
-            if (scoreRef.current > highScore) {
-                setHighScore(scoreRef.current);
-                localStorage.setItem('neonRunnerHighScore', scoreRef.current.toString());
-            }
-        } else {
-            gameStateRef.current = 'won';
-            setGameState('won');
-            const nextLevel = currentLevel + 1;
-            if (nextLevel > unlockedLevel) {
-                setUnlockedLevel(nextLevel);
-                localStorage.setItem('neonRunnerUnlockedLevel', nextLevel.toString());
-            }
+        // Infinite scaling levels
+        gameStateRef.current = 'won';
+        setGameState('won');
+        const nextLevel = currentLevel + 1;
+        if (nextLevel > unlockedLevel) {
+            setUnlockedLevel(nextLevel);
+            localStorage.setItem('neonRunnerUnlockedLevel', nextLevel.toString());
         }
         return;
       }
@@ -146,17 +153,15 @@ const GameCanvas: React.FC = () => {
           audioEnabled, createParticles, scoreRef, setScore, startShake
       );
 
+      updateEnemyProjectiles(enemyProjectiles, player, cameraX, canvas.width, onPlayerDamage);
+
       updatePrizes(prizes, player, groundY, gravity, (prize) => {
           scoreRef.current += 500;
           setScore(scoreRef.current);
           createParticles(prize.x + 15, prize.y + 15, '#f1c40f', 20, 4);
           if (audioEnabled) audioManager.playChest();
-          
           if (prize.type === 'bacon') player.bigTimer = 600;
-          else if (prize.type === 'burger') {
-              player.giantTimer = 600;
-              startShake(20, 10);
-          }
+          else if (prize.type === 'burger') { player.giantTimer = 600; startShake(20, 10); }
           else if (prize.type === 'carrot') { livesRef.current++; setLives(livesRef.current); }
           else if (prize.type === 'shoes') player.speedBoostTimer = 600;
           else if (prize.type === 'spring') player.jumpBoostTimer = 600;
@@ -167,23 +172,8 @@ const GameCanvas: React.FC = () => {
       }
 
       updateEnemies(
-        enemies, player, groundY, gravity, frameCount, audioEnabled, createParticles, 
-        scoreRef, setScore, startShake, () => {
-          livesRef.current--;
-          setLives(livesRef.current);
-          player.invincibilityFrames = 60;
-          createParticles(player.x + player.width/2, player.y + player.height/2, '#3498db', 10, 3);
-          startShake(20, 10);
-          if (audioEnabled) audioManager.playDamage();
-          if (livesRef.current <= 0) {
-              gameStateRef.current = 'gameover';
-              setGameState('gameover');
-              if (scoreRef.current > highScore) {
-                  setHighScore(scoreRef.current);
-                  localStorage.setItem('neonRunnerHighScore', scoreRef.current.toString());
-              }
-          }
-        }
+        enemies, player, enemyProjectiles, groundY, gravity, frameCount, audioEnabled, 
+        createParticles, scoreRef, setScore, startShake, onPlayerDamage
       );
 
       chests.forEach(chest => {
@@ -212,9 +202,7 @@ const GameCanvas: React.FC = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
       if (shakeTimer > 0) {
-          const dx = (Math.random() - 0.5) * shakeIntensity;
-          const dy = (Math.random() - 0.5) * shakeIntensity;
-          ctx.translate(dx, dy);
+          ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
       }
 
       Renderer.drawBackground(ctx, canvas, cameraX, groundY, level.bgLayers);
@@ -224,6 +212,7 @@ const GameCanvas: React.FC = () => {
       ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, groundY, worldWidth, 10);
       grass.forEach(g => { ctx.fillStyle = '#27ae60'; ctx.fillRect(g.x, g.y - g.size, 4, g.size); });
       
+      // End Flag
       ctx.fillStyle = '#2c3e50'; ctx.fillRect(worldWidth - 100, groundY - 150, 10, 150);
       ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.moveTo(worldWidth - 100, groundY - 150);
       ctx.lineTo(worldWidth - 40, groundY - 120); ctx.lineTo(worldWidth - 100, groundY - 90); ctx.fill();
@@ -249,32 +238,27 @@ const GameCanvas: React.FC = () => {
 
       Renderer.drawPrizes(ctx, prizes);
       Renderer.drawFireballs(ctx, fireballs);
+      Renderer.drawEnemyProjectiles(ctx, enemyProjectiles);
       enemies.forEach(e => Renderer.drawEnemy(ctx, e, frameCount));
       Renderer.drawBoy(ctx, player, frameCount);
       ctx.restore();
       
       for (let i = 0; i < lives; i++) Renderer.drawHeart(ctx, 20 + i * 35, 20, 25);
       
-      // Fireball Cooldown UI
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(20, 60, 100, 10);
       if (player.fireballTimer <= 0) {
-          ctx.fillStyle = '#e67e22';
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = '#e67e22';
+          ctx.fillStyle = '#e67e22'; ctx.shadowBlur = 10; ctx.shadowColor = '#e67e22';
           ctx.fillRect(20, 60, 100, 10);
-          ctx.fillStyle = 'white';
-          ctx.font = 'bold 12px Arial';
-          ctx.fillText('FIREBALL READY (F)', 20, 85);
+          ctx.fillStyle = 'white'; ctx.font = 'bold 12px Arial'; ctx.fillText('FIREBALL READY (F)', 20, 85);
       } else {
           ctx.fillStyle = '#555';
-          const width = 100 * (1 - player.fireballTimer / 180);
-          ctx.fillRect(20, 60, width, 10);
+          ctx.fillRect(20, 60, 100 * (1 - player.fireballTimer / 180), 10);
       }
       ctx.shadowBlur = 0;
-
       ctx.fillStyle = 'white'; ctx.font = 'bold 24px Arial'; 
       ctx.fillText(`Score: ${scoreRef.current}`, canvas.width - 150, 45);
+      ctx.fillText(`Level: ${currentLevel + 1}`, canvas.width - 150, 80);
 
       ctx.restore();
     };
@@ -289,43 +273,37 @@ const GameCanvas: React.FC = () => {
     };
   }, [gameStarted, currentLevel, retryKey]);
 
+  const resetGame = () => {
+      livesRef.current = 3; setLives(3);
+      scoreRef.current = 0; setScore(0);
+      setRetryKey(prev => prev + 1);
+      setGameState('playing');
+  };
+
   return (
     <div className="game-container">
       {!gameStarted && (
         <div className="start-overlay">
           <h1>NEON RUNNER</h1>
           <button className="start-btn" onClick={() => setGameStarted(true)}>START GAME</button>
-          
           <div className="high-score">HIGH SCORE: {highScore}</div>
-
           <div className="level-select">
-              <p>SELECT LEVEL</p>
+              <p>SELECT STARTING LEVEL</p>
               <div className="level-buttons">
-                  {LEVELS.map((_, i) => (
-                      <button 
-                          key={i} 
-                          className={`lvl-btn ${currentLevel === i ? 'active' : ''} ${i > unlockedLevel ? 'locked' : ''}`}
-                          onClick={() => i <= unlockedLevel && setCurrentLevel(i)}
-                          disabled={i > unlockedLevel}
-                      >
+                  {[0, 1, 2, 3, 4].map((i) => (
+                      <button key={i} className={`lvl-btn ${currentLevel === i ? 'active' : ''} ${i > unlockedLevel ? 'locked' : ''}`}
+                          onClick={() => i <= unlockedLevel && setCurrentLevel(i)} disabled={i > unlockedLevel}>
                           {i + 1} {i > unlockedLevel ? '🔒' : ''}
                       </button>
                   ))}
               </div>
           </div>
-
           <div className="audio-toggle" onClick={() => {
-              const newState = !audioEnabled;
-              setAudioEnabled(newState);
+              const newState = !audioEnabled; setAudioEnabled(newState);
               localStorage.setItem('neonRunnerAudio', newState.toString());
-          }}>
-            Audio: {audioEnabled ? '🔊 ON' : '🔇 OFF'}
-          </div>
+          }}>Audio: {audioEnabled ? '🔊 ON' : '🔇 OFF'}</div>
           <div className="controls-hint">
-            <p>ARROWS to Move</p>
-            <p>SPACE to Jump</p>
-            <p>SHIFT to Roll</p>
-            <p>F to SHOOT FIREBALL</p>
+            <p>ARROWS to Move | SPACE to Jump | SHIFT to Roll | F to SHOOT</p>
           </div>
         </div>
       )}
@@ -336,7 +314,7 @@ const GameCanvas: React.FC = () => {
               <h1>LEVEL {currentLevel + 1} CLEAR!</h1>
               <p>Score: {score}</p>
               <button className="start-btn" onClick={() => {
-                  setCurrentLevel(prev => (prev + 1) % LEVELS.length);
+                  setCurrentLevel(prev => prev + 1);
                   setGameState('playing');
               }}>NEXT LEVEL</button>
           </div>
@@ -347,37 +325,14 @@ const GameCanvas: React.FC = () => {
               <h1>GAME OVER</h1>
               <p>Score: {score}</p>
               <div className="high-score-mini">High Score: {highScore}</div>
-              <button className="start-btn" onClick={() => {
-                  livesRef.current = 3; setLives(3);
-                  scoreRef.current = 0; setScore(0);
-                  setRetryKey(prev => prev + 1);
-                  setGameState('playing');
-              }}>RETRY</button>
-          </div>
-      )}
-
-      {gameState === 'gameclear' && (
-          <div className="state-overlay gameclear">
-              <h1>NEON CHAMPION</h1>
-              <p>YOU CLEARED ALL LEVELS!</p>
-              <div className="final-stats">
-                  <div>Final Score: {score}</div>
-                  <div>High Score: {highScore}</div>
-              </div>
-              <button className="start-btn" onClick={() => {
-                  livesRef.current = 3; setLives(3);
-                  scoreRef.current = 0; setScore(0);
-                  setCurrentLevel(0);
-                  setRetryKey(prev => prev + 1);
-                  setGameState('playing');
-              }}>PLAY AGAIN</button>
+              <button className="start-btn" onClick={resetGame}>RETRY</button>
           </div>
       )}
 
       <div className="instructions">
-        <h3>Fireballs Active!</h3>
-        <p>Press 'F' to shoot. Deals damage to enemies and bosses.</p>
-        <p>Bacon: Get Big! | Gold Carrot: Extra Life!</p>
+        <h3>Procedural Generation Active!</h3>
+        <p>Levels are now randomly generated and get longer as you progress.</p>
+        <p>New Enemies: Flying Drones and Turrets added!</p>
       </div>
     </div>
   );

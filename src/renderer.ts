@@ -1,4 +1,4 @@
-import type { Player, Enemy, Prize, BackgroundLayer, Fireball } from './types';
+import type { Player, Enemy, Prize, BackgroundLayer, Fireball, EnemyProjectile } from './types';
 
 export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
     ctx.save();
@@ -20,7 +20,6 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
     ctx.save();
     if (!p.facingRight) { ctx.translate(p.x + p.width, p.y); ctx.scale(-1, 1); } else { ctx.translate(p.x, p.y); }
     
-    // Neon Glow
     ctx.shadowBlur = p.giantTimer > 0 ? 40 : 15;
     ctx.shadowColor = p.giantTimer > 0 ? '#f1c40f' : (p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1'));
 
@@ -31,24 +30,16 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
             ctx.arc(p.width/2, p.height/2, p.width/2, 0, Math.PI * 2); 
             ctx.fill();
         } else {
-            // Body
             if (p.giantTimer > 0) {
-                // Rainbow cycling effect for giant
                 ctx.fillStyle = `hsl(${frameCount * 5 % 360}, 70%, 50%)`;
             } else {
                 ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
             }
             ctx.fillRect(p.width*0.25, p.height*0.33, p.width*0.5, p.height*0.5);
-            
-            // Head
             ctx.fillStyle = '#f3e5ab';
             ctx.fillRect(p.width*0.3, p.height*0.08, p.width*0.4, p.height*0.26);
-            
-            // Eye
             ctx.fillStyle = 'black';
             ctx.fillRect(p.width*0.55, p.height*0.15, p.width*0.075, p.width*0.075);
-            
-            // Legs
             ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = p.width * 0.1;
             const legOff = Math.abs(p.vx) > 0 ? walkCycle : 0;
             ctx.beginPath(); ctx.moveTo(p.width*0.375, p.height*0.83); ctx.lineTo(p.width*0.375 + legOff, p.height); ctx.stroke();
@@ -61,8 +52,6 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
 export const drawEnemy = (ctx: CanvasRenderingContext2D, e: Enemy, frameCount: number) => {
     if (!e.alive) return;
     ctx.save(); ctx.translate(e.x, e.y);
-    
-    // Neon Glow for enemies
     ctx.shadowBlur = 10;
     ctx.shadowColor = e.color || '#ff00ff';
 
@@ -81,6 +70,12 @@ export const drawEnemy = (ctx: CanvasRenderingContext2D, e: Enemy, frameCount: n
                 ctx.fillStyle = 'red'; ctx.fillRect(0, -20, e.w, 10);
                 ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, -20, e.w * (e.hp / e.maxHp), 10);
             }
+        } else if (e.type === 'flying') {
+            ctx.fillStyle = 'white'; ctx.fillRect(5, 5, 30, 15); // Wings
+            ctx.fillStyle = 'black'; ctx.fillRect(15, 10, 10, 10); // Eye
+        } else if (e.type === 'turret') {
+            ctx.fillStyle = '#333'; ctx.fillRect(0, 20, 40, 20); // Base
+            ctx.fillStyle = '#ff0000'; ctx.fillRect(10, 0, 20, 20); // Head
         } else {
             ctx.fillStyle = 'white'; ctx.fillRect(5, 10, 12, 12); ctx.fillRect(23, 10, 12, 12);
             ctx.fillStyle = 'black'; ctx.fillRect(10, 15, 4, 4); ctx.fillRect(28, 15, 4, 4);
@@ -98,20 +93,15 @@ export const drawBackground = (
     groundY: number,
     layers?: BackgroundLayer[]
 ) => {
-    // Background fill (base sky)
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     if (layers) {
         layers.forEach(layer => {
             ctx.fillStyle = layer.color;
             const xOffset = -(cameraX * layer.speed) % 400;
-            
-            // Procedural shapes based on seed
             for (let i = -1; i < (canvas.width / 400) + 1; i++) {
                 const x = i * 400 + xOffset;
                 const h = layer.height;
-                
                 ctx.beginPath();
                 ctx.moveTo(x, groundY);
                 ctx.lineTo(x + 200, groundY - h);
@@ -119,11 +109,6 @@ export const drawBackground = (
                 ctx.fill();
             }
         });
-    } else {
-        // Fallback
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
-        skyGrad.addColorStop(0, '#1a1a2e'); skyGrad.addColorStop(1, '#16213e');
-        ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvas.width, groundY);
     }
 };
 
@@ -134,19 +119,18 @@ export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
         ctx.translate(p.x, p.y);
         ctx.shadowBlur = 15;
         ctx.shadowColor = '#f1c40f';
-        
         if (p.type === 'bacon') {
             ctx.fillStyle = '#ff9999'; ctx.fillRect(0, 5, 30, 10);
             ctx.fillStyle = '#ff0000'; ctx.fillRect(0, 15, 30, 5);
             ctx.fillStyle = '#ff9999'; ctx.fillRect(0, 20, 30, 5);
         } else if (p.type === 'carrot') {
-            ctx.fillStyle = '#f1c40f'; // Gold
+            ctx.fillStyle = '#f1c40f';
             ctx.beginPath(); ctx.moveTo(15, 30); ctx.lineTo(5, 5); ctx.lineTo(25, 5); ctx.fill();
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(12, 0, 6, 5);
         } else if (p.type === 'shoes') {
             ctx.fillStyle = '#3498db'; ctx.fillRect(5, 15, 20, 10);
             ctx.fillRect(15, 5, 10, 15);
-            ctx.fillStyle = '#f1c40f'; // Lightning
+            ctx.fillStyle = '#f1c40f';
             ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(20, 10); ctx.lineTo(30, 10); ctx.lineTo(22, 25); ctx.stroke();
         } else if (p.type === 'spring') {
             ctx.strokeStyle = '#95a5a6'; ctx.lineWidth = 3;
@@ -156,18 +140,11 @@ export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
             }
             ctx.stroke();
         } else if (p.type === 'burger') {
-            // Bun Top
             ctx.fillStyle = '#e67e22';
             ctx.beginPath(); ctx.arc(15, 10, 15, Math.PI, 0); ctx.fill();
-            // Lettuce
-            ctx.fillStyle = '#2ecc71';
-            ctx.fillRect(0, 10, 30, 3);
-            // Patty
-            ctx.fillStyle = '#795548';
-            ctx.fillRect(0, 13, 30, 6);
-            // Bun Bottom
-            ctx.fillStyle = '#e67e22';
-            ctx.fillRect(0, 19, 30, 6);
+            ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, 10, 30, 3);
+            ctx.fillStyle = '#795548'; ctx.fillRect(0, 13, 30, 6);
+            ctx.fillStyle = '#e67e22'; ctx.fillRect(0, 19, 30, 6);
         }
         ctx.restore();
     });
@@ -181,19 +158,29 @@ export const drawFireballs = (ctx: CanvasRenderingContext2D, fireballs: Fireball
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#e67e22';
         ctx.fillStyle = '#f39c12';
-        
-        // Inner core
         ctx.beginPath();
         ctx.arc(fb.w/2, fb.h/2, fb.w/2, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Outer glow/flicker
         ctx.fillStyle = '#e67e22';
         ctx.globalAlpha = 0.5;
         ctx.beginPath();
         ctx.arc(fb.w/2, fb.h/2, fb.w/2 + Math.random() * 5, 0, Math.PI * 2);
         ctx.fill();
-        
+        ctx.restore();
+    });
+};
+
+export const drawEnemyProjectiles = (ctx: CanvasRenderingContext2D, projectiles: EnemyProjectile[]) => {
+    projectiles.forEach(p => {
+        if (!p.active) return;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ff0000';
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath();
+        ctx.arc(p.w/2, p.h/2, p.w/2, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
     });
 };

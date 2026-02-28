@@ -17,12 +17,24 @@ export interface Enemy {
   h: number;
   vx?: number;
   vy?: number;
-  type: string;
+  type: 'patrol' | 'spikes' | 'boss' | 'flying' | 'turret';
   color?: string;
   alive: boolean;
   hp?: number;
   maxHp?: number;
   lastJump?: number;
+  lastShot?: number;
+  startY?: number;
+}
+
+export interface EnemyProjectile {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  w: number;
+  h: number;
+  active: boolean;
 }
 
 export interface Chest {
@@ -80,11 +92,11 @@ export interface BackgroundLayer {
 
 export interface Level {
   worldWidth: number;
-  enemies: Omit<Enemy, 'y' | 'alive'>[];
+  enemies: Enemy[];
   chests: Chest[];
   platforms: Platform[];
   blocks: Block[];
-  bgLayers?: BackgroundLayer[];
+  bgLayers: BackgroundLayer[];
 }
 
 export interface Player {

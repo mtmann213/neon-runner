@@ -1,4 +1,4 @@
-import type { Player, Enemy, Platform, Block, Prize, Fireball } from './types';
+import type { Player, Enemy, Platform, Block, Prize, Fireball, EnemyProjectile } from './types';
 import { audioManager } from './AudioManager';
 
 export const rectIntersect = (r1: any, r2: any) => {
@@ -30,19 +30,16 @@ export const updateFireballs = (
     fireballs.forEach(fb => {
         if (!fb.active) return;
 
-        // Apply Physics
         fb.vy += gravity;
         fb.x += fb.vx;
         fb.y += fb.vy;
 
-        // Ground Bounce
         if (fb.y + fb.h > groundY) {
             fb.y = groundY - fb.h;
             fb.vy = -Math.abs(fb.vy) * 0.8;
             if (Math.abs(fb.vy) < 1) fb.active = false;
         }
 
-        // Platform Bounce
         platforms.forEach(plat => {
             if (fb.active && 
                 fb.x + fb.w > plat.x && fb.x < plat.x + plat.w &&
@@ -73,7 +70,6 @@ export const updateFireballs = (
             if (fb.active && enemy.alive && rectIntersect(fb, enemy)) {
                 fb.active = false;
                 createParticles(fb.x, fb.y + fb.h/2, '#e67e22', 15, 3);
-                
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {
                     enemy.hp--;
                     startShake(10, 4);
@@ -92,6 +88,28 @@ export const updateFireballs = (
                 }
             }
         });
+    });
+};
+
+export const updateEnemyProjectiles = (
+    projectiles: EnemyProjectile[],
+    player: Player,
+    cameraX: number,
+    canvasWidth: number,
+    onPlayerDamage: () => void
+) => {
+    projectiles.forEach(p => {
+        if (!p.active) return;
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < cameraX - 100 || p.x > cameraX + canvasWidth + 100) {
+            p.active = false;
+            return;
+        }
+        if (rectIntersect(p, player)) {
+            p.active = false;
+            onPlayerDamage();
+        }
     });
 };
 
@@ -135,10 +153,7 @@ export const updatePlayer = (
         createParticles(player.x + player.width/2, groundY, '#7d5c34', 10, 3);
     }
 
-    if (player.isRolling) {
-        player.rollTimer--;
-        if (player.rollTimer <= 0) player.isRolling = false;
-    } else {
+    if (!player.isRolling) {
         player.vx = 0;
         if (keys['ArrowLeft']) player.vx = -effectiveMoveSpeed;
         if (keys['ArrowRight']) player.vx = effectiveMoveSpeed;
@@ -168,10 +183,12 @@ export const updatePlayer = (
                 if (audioEnabled) audioManager.playJump();
             }
         }
+    } else {
+        player.rollTimer--;
+        if (player.rollTimer <= 0) player.isRolling = false;
     }
 
     player.vy += gravity;
-    // X Collision
     player.x += player.vx;
     if (!isGiant) {
         blocks.forEach(obj => {
@@ -213,13 +230,9 @@ export const updatePlayer = (
                         if (audioEnabled) audioManager.playCoin();
                         if (obj.prizeType) {
                             prizes.push({
-                                x: obj.x + (obj.w - 30)/2,
-                                y: obj.y,
-                                w: 30, h: 30,
-                                vx: (Math.random() - 0.5) * 2,
-                                vy: -8,
-                                type: obj.prizeType,
-                                collected: false
+                                x: obj.x + (obj.w - 30)/2, y: obj.y, w: 30, h: 30,
+                                vx: (Math.random() - 0.5) * 2, vy: -8,
+                                type: obj.prizeType, collected: false
                             });
                         }
                     }
@@ -227,7 +240,6 @@ export const updatePlayer = (
             }
         });
     } else {
-        // Giant still activates blocks but walks through
         blocks.forEach(obj => {
             if (!obj.hit && rectIntersect(player, obj)) {
                 obj.hit = true;
@@ -285,6 +297,7 @@ export const updatePrizes = (
 export const updateEnemies = (
     enemies: Enemy[],
     player: Player,
+    enemyProjectiles: EnemyProjectile[],
     groundY: number,
     gravity: number,
     frameCount: number,
@@ -299,8 +312,26 @@ export const updateEnemies = (
         if (!enemy.alive) return;
         if (enemy.type === 'patrol' && enemy.vx !== undefined) {
             enemy.x += enemy.vx;
-            if (enemy.x > (enemy.id < 100 ? enemy.id * 800 + 400 : 8000) || 
-                enemy.x < (enemy.id < 100 ? enemy.id * 800 - 400 : 0)) enemy.vx *= -1;
+            // No simple bounds here, would need original startX
+        } else if (enemy.type === 'flying' && enemy.vx !== undefined) {
+            enemy.x += enemy.vx;
+            if (enemy.startY !== undefined) {
+                enemy.y = enemy.startY + Math.sin(frameCount * 0.05) * 50;
+            }
+        } else if (enemy.type === 'turret') {
+            if (frameCount - (enemy.lastShot || 0) > 120) {
+                const dx = player.x - enemy.x;
+                const dy = player.y - enemy.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 600) {
+                    enemyProjectiles.push({
+                        x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2,
+                        vx: (dx / dist) * 5, vy: (dy / dist) * 5,
+                        w: 10, h: 10, active: true
+                    });
+                    enemy.lastShot = frameCount;
+                }
+            }
         } else if (enemy.type === 'boss' && enemy.vx !== undefined && enemy.vy !== undefined) {
             if (player.x < enemy.x) enemy.vx = -Math.abs(enemy.vx);
             else enemy.vx = Math.abs(enemy.vx);
@@ -327,7 +358,6 @@ export const updateEnemies = (
                 if (audioEnabled) audioManager.playBop();
                 return;
             }
-
             if (player.vy > 0 && player.y < enemy.y && enemy.type !== 'spikes') {
                 if (enemy.type === 'boss' && enemy.hp !== undefined) {
                     enemy.hp--;
