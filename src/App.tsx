@@ -53,14 +53,19 @@ const GameCanvas: React.FC = () => {
         level = savedMainLevelRef.current || generateLevel(currentLevel, groundY);
     }
     
+    // Initialize persistent state arrays if they don't exist
+    if (!level.prizes) level.prizes = [];
+    if (!(level as any).fireballs) (level as any).fireballs = [];
+    if (!(level as any).enemyProjectiles) (level as any).enemyProjectiles = [];
+
     const worldWidth = level.worldWidth;
     let enemies: Enemy[] = level.enemies;
     let chests: Chest[] = level.chests;
     let platforms: Platform[] = level.platforms;
     let blocks: Block[] = level.blocks;
-    let prizes: Prize[] = (level as any).prizes || [];
-    let fireballs: Fireball[] = (level as any).fireballs || [];
-    let enemyProjectiles: EnemyProjectile[] = (level as any).enemyProjectiles || [];
+    let prizes: Prize[] = level.prizes;
+    let fireballs: Fireball[] = (level as any).fireballs;
+    let enemyProjectiles: EnemyProjectile[] = (level as any).enemyProjectiles;
     
     gameStateRef.current = 'playing';
     setGameState('playing');
@@ -131,7 +136,7 @@ const GameCanvas: React.FC = () => {
 
     const onWarp = (warp: Warp) => {
         if (warp.target === 'bonus') {
-            // Save current state
+            // Save current state into the level object itself for persistence
             (level as any).prizes = prizes;
             (level as any).fireballs = fireballs;
             (level as any).enemyProjectiles = enemyProjectiles;
@@ -141,8 +146,11 @@ const GameCanvas: React.FC = () => {
             setRetryKey(prev => prev + 1);
         } else {
             // Return to main
+            if (savedPlayerPosRef.current) {
+                // Move player slightly to the left of where they entered the door
+                savedPlayerPosRef.current.x -= 100;
+            }
             setIsBonusRoom(false);
-            // savedPlayerPosRef.current stays what it was to restore main pos
             setRetryKey(prev => prev + 1);
         }
     };
