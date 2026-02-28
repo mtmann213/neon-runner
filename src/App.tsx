@@ -376,20 +376,44 @@ const GameCanvas: React.FC = () => {
           <div className="loading-overlay">
               <div className="n64-container">
                   <div className="n64-logo-3d">
-                      {/* Left Pillar */}
-                      <div className="n-bar left-bar">
+                      {/* 4 Vertical Pillars */}
+                      <div className="n-bar pillar p1">
                           <div className="f top"></div><div className="f bottom"></div>
                           <div className="f front"></div><div className="f back"></div>
                           <div className="f side-left"></div><div className="f side-right"></div>
                       </div>
-                      {/* Right Pillar */}
-                      <div className="n-bar right-bar">
+                      <div className="n-bar pillar p2">
                           <div className="f top"></div><div className="f bottom"></div>
                           <div className="f front"></div><div className="f back"></div>
                           <div className="f side-left"></div><div className="f side-right"></div>
                       </div>
-                      {/* Diagonal Bar */}
-                      <div className="n-bar diagonal-bar">
+                      <div className="n-bar pillar p3">
+                          <div className="f top"></div><div className="f bottom"></div>
+                          <div className="f front"></div><div className="f back"></div>
+                          <div className="f side-left"></div><div className="f side-right"></div>
+                      </div>
+                      <div className="n-bar pillar p4">
+                          <div className="f top"></div><div className="f bottom"></div>
+                          <div className="f front"></div><div className="f back"></div>
+                          <div className="f side-left"></div><div className="f side-right"></div>
+                      </div>
+                      {/* 4 Diagonals */}
+                      <div className="n-bar diag d1">
+                          <div className="f top"></div><div className="f bottom"></div>
+                          <div className="f front"></div><div className="f back"></div>
+                          <div className="f side-left"></div><div className="f side-right"></div>
+                      </div>
+                      <div className="n-bar diag d2">
+                          <div className="f top"></div><div className="f bottom"></div>
+                          <div className="f front"></div><div className="f back"></div>
+                          <div className="f side-left"></div><div className="f side-right"></div>
+                      </div>
+                      <div className="n-bar diag d3">
+                          <div className="f top"></div><div className="f bottom"></div>
+                          <div className="f front"></div><div className="f back"></div>
+                          <div className="f side-left"></div><div className="f side-right"></div>
+                      </div>
+                      <div className="n-bar diag d4">
                           <div className="f top"></div><div className="f bottom"></div>
                           <div className="f front"></div><div className="f back"></div>
                           <div className="f side-left"></div><div className="f side-right"></div>
