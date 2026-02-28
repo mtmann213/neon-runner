@@ -273,6 +273,8 @@ const GameCanvas: React.FC = () => {
       if (player.invincibilityFrames > 0) player.invincibilityFrames--;
       if (player.speedBoostTimer > 0) { player.speedBoostTimer--; moveSpeed = 8; } else { moveSpeed = 5; }
 
+      const currentHeight = player.isRolling ? 30 : 60;
+
       // Check Victory (Reached Flag)
       if (player.x > worldWidth - 120) {
         gameStateRef.current = 'won';
@@ -308,7 +310,6 @@ const GameCanvas: React.FC = () => {
         }
       }
 
-      const currentHeight = player.isRolling ? 30 : 60;
       player.vy += gravity;
 
       // --- X MOVEMENT & COLLISION ---

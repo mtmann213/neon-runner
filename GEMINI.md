@@ -46,6 +46,7 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
   - Defeating the boss grants a massive score bonus (1000 pts).
 - **FIX:** Added `retryKey` and `currentLevel` to `useEffect` dependency array so "Next Level" and "Retry" actually reload the game loop.
 - **FIX:** Resolved TypeScript build errors that were causing a blank screen on start (missing `checkCollision`, unused `lives`, `undefined` check on `enemy.vx`).
+- **FIX:** Resolved game freeze when jumping (ReferenceError: `currentHeight` used before initialization).
 
 ## Pending Tasks / Ideas
 - [x] **Feel:** Implement Coyote Time and Jump Buffering.
