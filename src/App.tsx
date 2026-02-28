@@ -10,6 +10,7 @@ const GameCanvas: React.FC = () => {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [gameState, setGameState] = useState<'playing' | 'won' | 'gameover'>('playing');
   const [currentLevel, setCurrentLevel] = useState(0);
+  const [retryKey, setRetryKey] = useState(0);
   
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
@@ -337,7 +338,7 @@ const GameCanvas: React.FC = () => {
         window.removeEventListener('keyup', handleKeyUp); 
         audioManager.stopMusic();
     };
-  }, [gameStarted]);
+  }, [gameStarted, currentLevel, retryKey]);
 
   return (
     <div className="game-container">
@@ -377,6 +378,7 @@ const GameCanvas: React.FC = () => {
               <button className="start-btn" onClick={() => {
                   livesRef.current = 3; setLives(3);
                   scoreRef.current = 0; setScore(0);
+                  setRetryKey(prev => prev + 1);
                   setGameState('playing');
               }}>RETRY</button>
           </div>
