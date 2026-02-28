@@ -6,9 +6,9 @@
 
 body {
   margin: 0;
-  background-color: #222;
+  background-color: #111;
   color: white;
-  font-family: sans-serif;
+  font-family: 'Courier New', Courier, monospace;
 }
 
 .game-container {
@@ -19,6 +19,31 @@ body {
   position: relative;
 }
 
+.game-container::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 600px;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+  z-index: 5;
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+}
+
+canvas {
+  background: #000;
+  border: 4px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+  filter: contrast(1.1) brightness(1.2) saturate(1.2);
+  z-index: 1;
+}
+
 .start-overlay {
   position: absolute;
   top: 20px;
@@ -26,12 +51,13 @@ body {
   transform: translateX(-50%);
   width: 800px;
   height: 600px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.9);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 10;
+  z-index: 100;
+
   cursor: pointer;
   border: 4px solid #f1c40f;
   box-sizing: border-box;
@@ -60,14 +86,81 @@ body {
   transform: scale(1.1);
 }
 
+.audio-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.volume-sliders {
+    display: flex;
+    gap: 15px;
+}
+
+.vol-slider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.7rem;
+    color: #ccc;
+}
+
+.vol-slider input {
+    width: 60px;
+    cursor: pointer;
+}
+
 .audio-toggle {
-  margin-top: 20px;
   color: white;
   cursor: pointer;
   background: #444;
-  padding: 10px 20px;
+  padding: 5px 15px;
   border-radius: 20px;
   user-select: none;
+  font-size: 0.8rem;
+}
+
+.agent-btn {
+    border-color: #00ffff !important;
+    color: #00ffff !important;
+    box-shadow: 0 0 10px #00ffff;
+}
+
+.agent-log {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 250px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #00ffff;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: left;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #00ffff;
+    box-shadow: 0 0 15px #00ffff;
+    pointer-events: none;
+    z-index: 100;
+
+}
+
+.log-header {
+    font-weight: bold;
+    border-bottom: 1px solid #00ffff;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    text-align: center;
+}
+
+.log-entry {
+    margin-bottom: 5px;
+    line-height: 1.2;
 }
 
 .state-overlay {
@@ -164,7 +257,8 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 20;
+  z-index: 100;
+
 }
 
 .loading-text {
@@ -268,6 +362,57 @@ body {
 .state-overlay p {
     font-size: 32px;
     margin-bottom: 40px;
+}
+
+.upgrade-shop {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 255, 255, 0.1);
+    border: 2px solid #00ffff;
+    border-radius: 10px;
+    text-shadow: 0 0 10px #00ffff;
+    width: 80%;
+}
+
+.upgrade-shop h3 {
+    margin: 0 0 10px 0;
+    color: #00ffff;
+}
+
+.shards-count {
+    font-weight: bold;
+    color: #f1c40f;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.upgrade-items {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.upgrade-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.8rem;
+}
+
+.upgrade-item button {
+    padding: 5px 10px;
+    background: #00ffff;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.upgrade-item button:disabled {
+    background: #555;
+    cursor: not-allowed;
+    color: #888;
 }
 
 .controls-hint {
