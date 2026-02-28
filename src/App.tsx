@@ -259,8 +259,8 @@ const GameCanvas: React.FC = () => {
       // --- X MOVEMENT & COLLISION ---
       player.x += player.vx;
       
-      // Wall collisions (Platforms & Blocks)
-      [...platforms, ...blocks].forEach(obj => {
+      // Wall collisions (Blocks ONLY - Platforms are one-way)
+      blocks.forEach(obj => {
           if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
               player.y + currentHeight > obj.y && player.y < obj.y + obj.h) {
               if (player.vx > 0) player.x = obj.x - player.width;
@@ -269,6 +269,7 @@ const GameCanvas: React.FC = () => {
       });
 
       // --- Y MOVEMENT & COLLISION ---
+      const prevY = player.y; // Track for one-way platform check
       player.y += player.vy;
       player.isGrounded = false;
 
@@ -279,8 +280,8 @@ const GameCanvas: React.FC = () => {
         player.isGrounded = true;
       }
 
-      // Platforms & Blocks (Solid Top/Bottom)
-      [...platforms, ...blocks].forEach(obj => {
+      // Blocks (Solid Top/Bottom)
+      blocks.forEach(obj => {
           if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
               player.y + currentHeight > obj.y && player.y < obj.y + obj.h) {
               
@@ -292,15 +293,26 @@ const GameCanvas: React.FC = () => {
                   player.y = obj.y + obj.h;
                   player.vy = 0;
                   
-                  // Special logic for treasure blocks
-                  if ('hit' in obj && !obj.hit) {
-                      (obj as any).hit = true;
+                  if (!obj.hit) {
+                      obj.hit = true;
                       scoreRef.current += 200;
                       setScore(scoreRef.current);
                       createParticles(obj.x + 20, obj.y, '#f1c40f', 10, 2);
                       startShake(5, 2);
                       if (audioEnabled) audioManager.playCoin();
                   }
+              }
+          }
+      });
+
+      // Platforms (One-way: only block from above)
+      platforms.forEach(obj => {
+          if (player.x + player.width > obj.x && player.x < obj.x + obj.w) {
+              // Only collide if falling AND were previously above the platform
+              if (player.vy >= 0 && prevY + currentHeight <= obj.y && player.y + currentHeight >= obj.y) {
+                  player.y = obj.y - currentHeight;
+                  player.vy = 0;
+                  player.isGrounded = true;
               }
           }
       });
