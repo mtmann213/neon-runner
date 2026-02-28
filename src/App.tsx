@@ -23,7 +23,7 @@ const GameCanvas: React.FC = () => {
   
   const scoreRef = useRef(0);
   const livesRef = useRef(3);
-  const [livesState, setLivesState] = useState(3); // For UI triggering
+  const [livesState, setLivesState] = useState(3);
   const gameStateRef = useRef<'playing' | 'won' | 'gameover' | 'gameclear'>('playing');
 
   const [isBonusRoom, setIsBonusRoom] = useState(false);
@@ -91,7 +91,6 @@ const GameCanvas: React.FC = () => {
 
     let frameCount = 0;
     let cameraX = 0;
-    
     let startX = 50;
     let startY = 100;
     if (isBonusRoom) {
@@ -106,7 +105,7 @@ const GameCanvas: React.FC = () => {
       width: 40, height: 60, vx: 0, vy: 0,
       isGrounded: false, isRolling: false, rollTimer: 0,
       invincibilityFrames: 0, speedBoostTimer: 0, jumpBoostTimer: 0, bigTimer: 0,
-      giantTimer: 0, fireballTimer: 0,
+      giantTimer: 0, fireballTimer: 0, wingTimer: 0,
       facingRight: true, coyoteTimer: 0, jumpBufferTimer: 0, airJumpsLeft: 1, 
       isWallSliding: false
     };
@@ -143,9 +142,7 @@ const GameCanvas: React.FC = () => {
             setIsBonusRoom(true);
             setRetryKey(prev => prev + 1);
         } else {
-            if (savedPlayerPosRef.current) {
-                savedPlayerPosRef.current.x -= 100;
-            }
+            if (savedPlayerPosRef.current) savedPlayerPosRef.current.x -= 100;
             setIsBonusRoom(false);
             setRetryKey(prev => prev + 1);
         }
@@ -185,11 +182,7 @@ const GameCanvas: React.FC = () => {
         return;
       }
 
-      updatePlayer(
-        player, keys, level, gravity, jumpStrength, moveSpeed, rollSpeed, 
-        groundY, audioEnabled, createParticles, scoreRef, setScore, startShake, onWarp
-      );
-
+      updatePlayer(player, keys, level, gravity, jumpStrength, moveSpeed, rollSpeed, groundY, audioEnabled, createParticles, scoreRef, setScore, startShake, onWarp);
       updateFireballs(fireballs, enemies, blocks, platforms, groundY, gravity, cameraX, canvas.width, audioEnabled, createParticles, scoreRef, setScore, startShake);
       updateFirebars(level.firebars || [], player, onPlayerDamage);
       updateEnemyProjectiles(enemyProjectiles, player, cameraX, canvas.width, onPlayerDamage);
@@ -199,13 +192,13 @@ const GameCanvas: React.FC = () => {
           if (audioEnabled) audioManager.playChest();
           if (prize.type === 'bacon') player.bigTimer = 600;
           else if (prize.type === 'burger') { player.giantTimer = 600; startShake(20, 10); }
+          else if (prize.type === 'wing') player.wingTimer = 600;
           else if (prize.type === 'carrot') { livesRef.current++; setLivesState(livesRef.current); }
           else if (prize.type === 'shoes') player.speedBoostTimer = 600;
           else if (prize.type === 'spring') player.jumpBoostTimer = 600;
       });
 
       if (player.isRolling && frameCount % 2 === 0) createParticles(player.x + player.width/2, groundY, '#7d5c34', 2, 1);
-
       updateEnemies(enemies, player, enemyProjectiles, groundY, gravity, frameCount, audioEnabled, createParticles, scoreRef, setScore, startShake, onPlayerDamage);
 
       chests.forEach(chest => {
@@ -238,40 +231,32 @@ const GameCanvas: React.FC = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
       if (shakeTimer > 0) ctx.translate((Math.random() - 0.5) * shakeIntensity, (Math.random() - 0.5) * shakeIntensity);
-
       Renderer.drawBackground(ctx, canvas, cameraX, groundY, level.bgLayers, level.waterLevel);
-
       ctx.save(); ctx.translate(-cameraX, 0);
       ctx.fillStyle = isBonusRoom ? '#2c3e50' : '#7d5c34'; ctx.fillRect(0, groundY, worldWidth, canvas.height - groundY);
       ctx.fillStyle = isBonusRoom ? '#00ffff' : '#2ecc71'; ctx.fillRect(0, groundY, worldWidth, 10);
       if (!isBonusRoom) grass.forEach(g => { ctx.fillStyle = '#27ae60'; ctx.fillRect(g.x, g.y - g.size, 4, g.size); });
-      
       if (!isBonusRoom) {
           ctx.fillStyle = '#2c3e50'; ctx.fillRect(worldWidth - 100, groundY - 150, 10, 150);
           ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.moveTo(worldWidth - 100, groundY - 150);
           ctx.lineTo(worldWidth - 40, groundY - 120); ctx.lineTo(worldWidth - 100, groundY - 90); ctx.fill();
       }
-
       Renderer.drawWarps(ctx, level.warps || []);
       particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fillRect(p.x, p.y, p.size, p.size); });
       ctx.globalAlpha = 1.0;
-
       chests.forEach(c => {
           ctx.fillStyle = c.open ? '#8B4513' : '#f1c40f'; ctx.fillRect(c.x, c.y, c.w, c.h);
           if (!c.open) { ctx.fillStyle = 'black'; ctx.font = 'bold 20px Arial'; ctx.fillText('?', c.x+15, c.y+25); }
       });
-
       platforms.forEach(p => {
           ctx.fillStyle = isBonusRoom ? '#00ffff' : '#95a5a6'; ctx.fillRect(p.x, p.y, p.w, p.h);
           ctx.strokeStyle = '#bdc3c7'; ctx.strokeRect(p.x, p.y, p.w, p.h);
       });
-
       blocks.forEach(b => {
           ctx.fillStyle = b.hit ? '#95a5a6' : '#f1c40f'; ctx.fillRect(b.x, b.y, b.w, b.h);
           ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.strokeRect(b.x, b.y, b.w, b.h);
           if (!b.hit) { ctx.fillStyle = 'white'; ctx.font = 'bold 30px Arial'; ctx.fillText('$', b.x+10, b.y+32); }
       });
-
       Renderer.drawPrizes(ctx, prizes);
       Renderer.drawFireballs(ctx, fireballs);
       Renderer.drawFirebars(ctx, level.firebars || []);
@@ -279,9 +264,7 @@ const GameCanvas: React.FC = () => {
       enemies.forEach(e => Renderer.drawEnemy(ctx, e, frameCount));
       Renderer.drawBoy(ctx, player, frameCount, level.waterLevel !== undefined && player.y + player.height/2 > level.waterLevel);
       ctx.restore();
-      
       for (let i = 0; i < livesRef.current; i++) Renderer.drawHeart(ctx, 20 + i * 35, 20, 25);
-      
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(20, 60, 100, 10);
       if (player.fireballTimer <= 0) {
@@ -300,7 +283,6 @@ const GameCanvas: React.FC = () => {
           ctx.fillStyle = '#bf5af2'; ctx.shadowBlur = 10; ctx.shadowColor = '#bf5af2';
           ctx.fillText('BONUS ROOM', canvas.width - 180, 80);
       }
-
       ctx.restore();
     };
 
@@ -454,9 +436,9 @@ const GameCanvas: React.FC = () => {
       )}
 
       <div className="instructions">
-        <h3>Secret Bonus Rooms!</h3>
-        <p>Find the glowing purple doors to enter secret rooms filled with prizes.</p>
-        <p>Exit through the same door to return to the main level.</p>
+        <h3>Wings Added!</h3>
+        <p>Find the Wing power-up to fly for 10 seconds. Press Jump to flap!</p>
+        <p>Bacon: Get Big! | Burger: Giantic! | Carrot: Life!</p>
       </div>
     </div>
   );

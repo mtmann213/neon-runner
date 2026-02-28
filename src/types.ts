@@ -59,7 +59,7 @@ export interface Block {
   w: number;
   h: number;
   hit: boolean;
-  prizeType?: 'bacon' | 'carrot' | 'shoes' | 'spring' | 'burger';
+  prizeType?: 'bacon' | 'carrot' | 'shoes' | 'spring' | 'burger' | 'wing';
 }
 
 export interface Warp {
@@ -87,7 +87,7 @@ export interface Prize {
   h: number;
   vx: number;
   vy: number;
-  type: 'bacon' | 'carrot' | 'shoes' | 'spring' | 'burger';
+  type: 'bacon' | 'carrot' | 'shoes' | 'spring' | 'burger' | 'wing';
   collected: boolean;
 }
 
@@ -137,6 +137,7 @@ export interface Player {
   bigTimer: number;
   giantTimer: number;
   fireballTimer: number;
+  wingTimer: number;
   facingRight: boolean;
   coyoteTimer: number;
   jumpBufferTimer: number;

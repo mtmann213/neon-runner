@@ -1,11 +1,12 @@
 import type { Level, Enemy, Chest, Platform, Block, BackgroundLayer, Warp, Firebar } from './types';
 
-const LOOT_TABLE: ('bacon' | 'carrot' | 'shoes' | 'spring' | 'burger')[] = [
+const LOOT_TABLE: ('bacon' | 'carrot' | 'shoes' | 'spring' | 'burger' | 'wing')[] = [
     'bacon', 'bacon', 'bacon', 'bacon', // 40%
     'spring', 'spring', 'spring',       // 30%
     'shoes', 'shoes',                   // 20%
     'carrot',                           // 8% (approx)
-    'burger'                            // 2% (approx)
+    'burger',                           // 2%
+    'wing'                              // 2%
 ];
 
 export const getRandomPrize = () => LOOT_TABLE[Math.floor(Math.random() * LOOT_TABLE.length)];
@@ -32,7 +33,7 @@ export const generateBonusRoom = (groundY: number): Level => {
     ];
     const blocks: Block[] = [
         { x: 200, y: 350, w: 40, h: 40, hit: false, prizeType: 'burger' },
-        { x: 500, y: 250, w: 40, h: 40, hit: false, prizeType: 'carrot' },
+        { x: 500, y: 250, w: 40, h: 40, hit: false, prizeType: 'wing' },
         { x: 800, y: 150, w: 40, h: 40, hit: false, prizeType: 'shoes' },
         { x: 500, y: 50, w: 40, h: 40, hit: false, prizeType: 'spring' },
     ];
@@ -74,7 +75,6 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
         }
 
         if (r < 0.2) {
-            // Flat area with enemies
             const count = 1 + Math.floor(Math.random() * 3);
             for (let i = 0; i < count; i++) {
                 enemies.push({
@@ -88,7 +88,6 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
             }
             currentX += 1000;
         } else if (r < 0.5) {
-            // Platforming section
             const platCount = 2 + Math.floor(Math.random() * 3);
             for (let i = 0; i < platCount; i++) {
                 const py = groundY - 100 - (i * 100);
@@ -100,7 +99,6 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
             }
             currentX += platCount * 250 + 200;
         } else if (r < 0.7) {
-            // Firebar section
             blocks.push({ x: currentX, y: groundY - 200, w: 40, h: 40, hit: false });
             firebars.push({
                 x: currentX + 20, y: groundY - 180,
@@ -110,7 +108,6 @@ export const generateLevel = (levelNumber: number, groundY: number): Level => {
             });
             currentX += 600;
         } else if (r < 0.85) {
-            // Hazard section
             enemies.push({
                 id: enemyId++, x: currentX, y: groundY - 40, w: 80 + Math.random() * 100, h: 40,
                 type: 'spikes', color: isWaterLevel ? '#48cae4' : '#00ffff', alive: true

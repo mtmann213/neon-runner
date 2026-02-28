@@ -44,7 +44,7 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
                 ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
             }
             ctx.fillRect(p.width*0.25, p.height*0.33, p.width*0.5, p.height*0.5);
-            
+            // Swimming Arms
             if (isSwimming) {
                 ctx.strokeStyle = '#f3e5ab'; ctx.lineWidth = p.width * 0.15;
                 ctx.beginPath(); ctx.moveTo(p.width*0.25, p.height*0.4); 
@@ -53,7 +53,27 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
                 ctx.lineTo(p.width*0.95, p.height*0.4 - swimCycle); ctx.stroke();
             }
 
-            ctx.fillStyle = '#f3e5ab';
+            // Wings (Flight Power-up)
+            if (p.wingTimer > 0) {
+                ctx.fillStyle = 'white';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#00ffff';
+                const flap = Math.sin(frameCount * 0.3) * 15;
+                // Left Wing
+                ctx.beginPath();
+                ctx.moveTo(p.width*0.25, p.height*0.3);
+                ctx.quadraticCurveTo(-20, p.height*0.3 - 20 + flap, -10, p.height*0.3 + 20);
+                ctx.fill();
+                // Right Wing
+                ctx.beginPath();
+                ctx.moveTo(p.width*0.75, p.height*0.3);
+                ctx.quadraticCurveTo(p.width + 20, p.height*0.3 - 20 + flap, p.width + 10, p.height*0.3 + 20);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            // Head
+
             ctx.fillRect(p.width*0.3, p.height*0.08, p.width*0.4, p.height*0.26);
             ctx.fillStyle = 'black';
             ctx.fillRect(p.width*0.55, p.height*0.15, p.width*0.075, p.width*0.075);
@@ -161,12 +181,25 @@ export const drawPrizes = (ctx: CanvasRenderingContext2D, prizes: Prize[]) => {
         } else if (p.type === 'burger') {
             ctx.fillStyle = '#e67e22'; ctx.beginPath(); ctx.arc(15, 10, 15, Math.PI, 0); ctx.fill();
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(0, 10, 30, 3);
-            ctx.fillStyle = '#795548'; ctx.fillRect(0, 13, 30, 6);
-            ctx.fillStyle = '#e67e22'; ctx.fillRect(0, 19, 30, 6);
-        }
-        ctx.restore();
-    });
-};
+            ctx.fillStyle = '#795548';
+            ctx.fillRect(0, 13, 30, 6);
+            // Bun Bottom
+            ctx.fillStyle = '#e67e22';
+            ctx.fillRect(0, 19, 30, 6);
+            } else if (p.type === 'wing') {
+            ctx.fillStyle = 'white';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#00ffff';
+            ctx.beginPath();
+            ctx.moveTo(0, 15);
+            ctx.bezierCurveTo(-10, 0, 30, 0, 20, 15);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(30, 15);
+            ctx.bezierCurveTo(40, 0, 0, 0, 10, 15);
+            ctx.fill();
+            }
+            ctx.restore();
 
 export const drawFireballs = (ctx: CanvasRenderingContext2D, fireballs: Fireball[]) => {
     fireballs.forEach(fb => {
