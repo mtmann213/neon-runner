@@ -134,6 +134,7 @@ const GameCanvas: React.FC = () => {
 
     const onWarp = (warp: Warp) => {
         if (warp.target === 'bonus') {
+            warp.used = true;
             (level as any).prizes = prizes;
             (level as any).fireballs = fireballs;
             (level as any).enemyProjectiles = enemyProjectiles;

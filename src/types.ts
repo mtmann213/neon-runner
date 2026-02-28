@@ -69,6 +69,7 @@ export interface Warp {
   h: number;
   target: 'bonus' | 'main';
   id: string;
+  used?: boolean;
 }
 
 export interface Firebar {

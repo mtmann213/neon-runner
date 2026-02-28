@@ -1,4 +1,4 @@
-import type { Player, Enemy, Prize, BackgroundLayer, Fireball, EnemyProjectile, Warp } from './types';
+import type { Player, Enemy, Prize, BackgroundLayer, Fireball, EnemyProjectile, Warp, Firebar } from './types';
 
 export const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
     ctx.save();
@@ -38,7 +38,6 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
             ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(p.width*0.7, p.height*0.3); ctx.lineTo(p.width*0.9, p.height*0.2); ctx.stroke();
         } else {
-            // Body
             if (p.giantTimer > 0) {
                 ctx.fillStyle = `hsl(${frameCount * 5 % 360}, 70%, 50%)`;
             } else {
@@ -46,7 +45,6 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
             }
             ctx.fillRect(p.width*0.25, p.height*0.33, p.width*0.5, p.height*0.5);
             
-            // Swimming Arms
             if (isSwimming) {
                 ctx.strokeStyle = '#f3e5ab'; ctx.lineWidth = p.width * 0.15;
                 ctx.beginPath(); ctx.moveTo(p.width*0.25, p.height*0.4); 
@@ -55,13 +53,11 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
                 ctx.lineTo(p.width*0.95, p.height*0.4 - swimCycle); ctx.stroke();
             }
 
-            // Head
             ctx.fillStyle = '#f3e5ab';
             ctx.fillRect(p.width*0.3, p.height*0.08, p.width*0.4, p.height*0.26);
             ctx.fillStyle = 'black';
             ctx.fillRect(p.width*0.55, p.height*0.15, p.width*0.075, p.width*0.075);
             
-            // Legs
             ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = p.width * 0.1;
             const legOff = Math.abs(p.vx) > 0 ? (isSwimming ? swimCycle : walkCycle) : 0;
             ctx.beginPath(); ctx.moveTo(p.width*0.375, p.height*0.83); ctx.lineTo(p.width*0.375 + legOff, p.height); ctx.stroke();
@@ -194,10 +190,18 @@ export const drawEnemyProjectiles = (ctx: CanvasRenderingContext2D, projectiles:
 
 export const drawWarps = (ctx: CanvasRenderingContext2D, warps: Warp[]) => {
     warps.forEach(w => {
-        ctx.save(); ctx.translate(w.x, w.y); ctx.shadowBlur = 20; ctx.shadowColor = '#bf5af2';
-        ctx.strokeStyle = '#bf5af2'; ctx.lineWidth = 4; ctx.strokeRect(0, 0, w.w, w.h);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; ctx.fillRect(0, 0, w.w, w.h);
-        ctx.fillStyle = '#bf5af2'; ctx.globalAlpha = 0.3; ctx.fillRect(w.w*0.2, w.h*0.2, w.w*0.6, w.h*0.6);
+        ctx.save(); ctx.translate(w.x, w.y);
+        if (w.used) {
+            ctx.strokeStyle = '#555'; ctx.lineWidth = 2; ctx.strokeRect(0, 0, w.w, w.h);
+            ctx.fillStyle = 'rgba(20, 20, 20, 0.9)'; ctx.fillRect(0, 0, w.w, w.h);
+            ctx.strokeStyle = '#333'; ctx.beginPath(); ctx.moveTo(10, 10); ctx.lineTo(w.w-10, w.h-10); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(w.w-10, 10); ctx.lineTo(10, w.h-10); ctx.stroke();
+        } else {
+            ctx.shadowBlur = 20; ctx.shadowColor = '#bf5af2';
+            ctx.strokeStyle = '#bf5af2'; ctx.lineWidth = 4; ctx.strokeRect(0, 0, w.w, w.h);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; ctx.fillRect(0, 0, w.w, w.h);
+            ctx.fillStyle = '#bf5af2'; ctx.globalAlpha = 0.3; ctx.fillRect(w.w*0.2, w.h*0.2, w.w*0.6, w.h*0.6);
+        }
         ctx.restore();
     });
 };
@@ -208,16 +212,9 @@ export const drawFirebars = (ctx: CanvasRenderingContext2D, firebars: Firebar[])
             const dist = i * 25;
             const fx = bar.x + Math.cos(bar.angle) * dist;
             const fy = bar.y + Math.sin(bar.angle) * dist;
-            
-            ctx.save();
-            ctx.translate(fx, fy);
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#e67e22';
-            ctx.fillStyle = '#f1c40f';
-            ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
-            // Core
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.save(); ctx.translate(fx, fy); ctx.shadowBlur = 15; ctx.shadowColor = '#e67e22';
+            ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
     });

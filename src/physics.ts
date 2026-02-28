@@ -310,7 +310,7 @@ export const updatePlayer = (
     });
 
     (level.warps || []).forEach(warp => {
-        if (rectIntersect(player, warp)) onWarp(warp);
+        if (!warp.used && rectIntersect(player, warp)) onWarp(warp);
     });
 };
 
