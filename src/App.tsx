@@ -33,15 +33,15 @@ const GameCanvas: React.FC = () => {
         { x: 4500, y: 0, w: 40, h: 40, type: 'health', open: false }
       ],
       platforms: [
-        { x: 600, y: 400, w: 150, h: 20 },
-        { x: 900, y: 300, w: 150, h: 20 },
-        { x: 1800, y: 350, w: 200, h: 20 },
-        { x: 2100, y: 250, w: 200, h: 20 },
+        { x: 600, y: 420, w: 150, h: 20 },
+        { x: 900, y: 340, w: 150, h: 20 },
+        { x: 1800, y: 420, w: 200, h: 20 },
+        { x: 2100, y: 340, w: 200, h: 20 },
       ],
       blocks: [
-        { x: 700, y: 250, w: 40, h: 40, hit: false },
-        { x: 1000, y: 150, w: 40, h: 40, hit: false },
-        { x: 2200, y: 100, w: 40, h: 40, hit: false },
+        { x: 700, y: 300, w: 40, h: 40, hit: false },
+        { x: 1000, y: 220, w: 40, h: 40, hit: false },
+        { x: 2200, y: 200, w: 40, h: 40, hit: false },
       ]
     },
     {
@@ -59,13 +59,13 @@ const GameCanvas: React.FC = () => {
           { x: 5500, y: 0, w: 40, h: 40, type: 'speed', open: false }
         ],
         platforms: [
-            { x: 800, y: 400, w: 120, h: 20 },
-            { x: 1100, y: 320, w: 120, h: 20 },
-            { x: 1400, y: 240, w: 120, h: 20 },
+            { x: 800, y: 420, w: 120, h: 20 },
+            { x: 1100, y: 340, w: 120, h: 20 },
+            { x: 1400, y: 260, w: 120, h: 20 },
         ],
         blocks: [
-            { x: 1150, y: 180, w: 40, h: 40, hit: false },
-            { x: 1450, y: 100, w: 40, h: 40, hit: false },
+            { x: 1150, y: 240, w: 40, h: 40, hit: false },
+            { x: 1450, y: 160, w: 40, h: 40, hit: false },
         ]
       }
   ];
@@ -149,11 +149,6 @@ const GameCanvas: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 
-    const checkCollision = (r1: any, r2: any) => (
-        r1.x < r2.x + r2.w && r1.x + r1.width > r2.x &&
-        r1.y < r2.y + r2.h && r1.y + (r1.isRolling ? 30 : 60) > r2.y
-    );
-
     const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
       ctx.fillStyle = '#e74c3c'; ctx.beginPath();
       ctx.moveTo(x, y + size / 4);
@@ -219,6 +214,11 @@ const GameCanvas: React.FC = () => {
       });
     };
 
+    const rectIntersect = (r1: any, r2: any) => (
+        r1.x < r2.x + r2.w && r1.x + r1.width > r2.x &&
+        r1.y < r2.y + r2.h && r1.y + (r1.isRolling ? 30 : 60) > r2.y
+    );
+
     const update = () => {
       if (gameStateRef.current !== 'playing') return;
 
@@ -253,58 +253,60 @@ const GameCanvas: React.FC = () => {
         }
       }
 
-      player.vy += gravity; player.x += player.vx; player.y += player.vy;
       const currentHeight = player.isRolling ? 30 : 60;
+      player.vy += gravity;
 
-      // Reset grounded state before checks
-      let wasGrounded = player.isGrounded;
-      player.isGrounded = false;
-
-      // Ground Collision
-      if (player.y + currentHeight > groundY) {
-        if (!wasGrounded) createParticles(player.x + 20, groundY, '#7d5c34', 5, 1);
-        player.y = groundY - currentHeight; player.vy = 0; player.isGrounded = true;
-      }
-
-      // Platform Collision (One-way)
-      platforms.forEach(plat => {
-          if (player.vy >= 0 && 
-              player.x + player.width > plat.x && player.x < plat.x + plat.w &&
-              player.y + currentHeight <= plat.y && player.y + currentHeight + player.vy >= plat.y) {
-                player.y = plat.y - currentHeight;
-                player.vy = 0;
-                player.isGrounded = true;
+      // --- X MOVEMENT & COLLISION ---
+      player.x += player.vx;
+      
+      // Wall collisions (Platforms & Blocks)
+      [...platforms, ...blocks].forEach(obj => {
+          if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
+              player.y + currentHeight > obj.y && player.y < obj.y + obj.h) {
+              if (player.vx > 0) player.x = obj.x - player.width;
+              else if (player.vx < 0) player.x = obj.x + obj.w;
           }
       });
 
-      // Treasure Block Collision (Head bump)
-      blocks.forEach(block => {
-          // Horizontal overlap
-          if (player.x + player.width > block.x && player.x < block.x + block.w) {
-              // Hit from bottom
-              if (player.vy < 0 && player.y >= block.y + block.h && player.y + player.vy <= block.y + block.h) {
-                  player.y = block.y + block.h;
+      // --- Y MOVEMENT & COLLISION ---
+      player.y += player.vy;
+      player.isGrounded = false;
+
+      // Ground
+      if (player.y + currentHeight > groundY) {
+        player.y = groundY - currentHeight;
+        player.vy = 0;
+        player.isGrounded = true;
+      }
+
+      // Platforms & Blocks (Solid Top/Bottom)
+      [...platforms, ...blocks].forEach(obj => {
+          if (player.x + player.width > obj.x && player.x < obj.x + obj.w &&
+              player.y + currentHeight > obj.y && player.y < obj.y + obj.h) {
+              
+              if (player.vy > 0) { // Landing
+                  player.y = obj.y - currentHeight;
                   player.vy = 0;
-                  if (!block.hit) {
-                      block.hit = true;
+                  player.isGrounded = true;
+              } else if (player.vy < 0) { // Head bump
+                  player.y = obj.y + obj.h;
+                  player.vy = 0;
+                  
+                  // Special logic for treasure blocks
+                  if ('hit' in obj && !obj.hit) {
+                      (obj as any).hit = true;
                       scoreRef.current += 200;
                       setScore(scoreRef.current);
-                      createParticles(block.x + 20, block.y, '#f1c40f', 10, 2);
+                      createParticles(obj.x + 20, obj.y, '#f1c40f', 10, 2);
                       startShake(5, 2);
                       if (audioEnabled) audioManager.playCoin();
                   }
-              }
-              // Land on top
-              else if (player.vy >= 0 && player.y + currentHeight <= block.y && player.y + currentHeight + player.vy >= block.y) {
-                player.y = block.y - currentHeight;
-                player.vy = 0;
-                player.isGrounded = true;
               }
           }
       });
 
       chests.forEach(chest => {
-          if (!chest.open && checkCollision(player, chest)) {
+          if (!chest.open && rectIntersect(player, chest)) {
               chest.open = true; 
               scoreRef.current += 100;
               setScore(scoreRef.current);

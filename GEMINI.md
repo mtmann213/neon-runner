@@ -40,7 +40,8 @@ A React-based 2D platformer built with Canvas, focusing on "game juice" and poli
   - Added Game Over screen with Retry functionality.
   - Reaching the red flag at the end of the world now triggers the level clear.
 - **NEW:** Floating Platforms and Treasure Blocks.
-  - One-way floating platforms for vertical gameplay.
+  - Solid platforms and blocks with side and head-bump collision.
+  - Adjusted level design for better accessibility (platforms are reachable).
   - Treasure blocks ($) that give points when head-bumped.
   - Added "Coin" sound effect for hitting blocks.
 - **FIX:** Added `retryKey` and `currentLevel` to `useEffect` dependency array so "Next Level" and "Retry" actually reload the game loop.
