@@ -223,9 +223,9 @@ body {
 .pillar .f.top, .pillar .f.bottom { width: 25px; height: 25px; }
 
 /* Diagonal Styling */
-.diag { width: 25px; height: 110px; }
-.diag .f.front, .diag .f.back { width: 25px; height: 110px; }
-.diag .f.side-left, .diag .f.side-right { width: 25px; height: 110px; }
+.diag { width: 25px; height: 112px; }
+.diag .f.front, .diag .f.back { width: 25px; height: 112px; }
+.diag .f.side-left, .diag .f.side-right { width: 25px; height: 112px; }
 .diag .f.top, .diag .f.bottom { width: 25px; height: 25px; }
 
 /* Face Transforms */
@@ -235,7 +235,7 @@ body {
 .f.side-right { transform: rotateY(90deg) translateZ(12.5px); }
 .f.top { transform: rotateX(90deg) translateZ(12.5px); }
 .f.bottom { transform: rotateX(-90deg) translateZ(87.5px); }
-.diag .f.bottom { transform: rotateX(-90deg) translateZ(97.5px); }
+.diag .f.bottom { transform: rotateX(-90deg) translateZ(99.5px); }
 
 /* Pillar Colors & Positions */
 .p1 { transform: translate3d(-37.5px, 0, 37.5px); }
@@ -249,11 +249,11 @@ body {
 .p3 .f, .d3 .f { background: #f1c40f; } /* Back Face - Yellow */
 .p4 .f, .d4 .f { background: #e74c3c; } /* Left Face - Red */
 
-/* Diagonal Positions & Rotations */
-.d1 { transform: translate3d(-18.75px, -5px, 37.5px) rotateZ(-35deg); } /* Front N */
-.d2 { transform: translate3d(37.5px, -5px, 0px) rotateX(35deg); }      /* Right N */
-.d3 { transform: translate3d(18.75px, -5px, -37.5px) rotateZ(35deg); }  /* Back N */
-.d4 { transform: translate3d(-37.5px, -5px, 0px) rotateX(-35deg); }     /* Left N */
+/* Diagonal Positions & Rotations - Fixed Math */
+.d1 { transform: translate3d(0, -6px, 37.5px) rotateZ(-26.5deg); } /* Front N */
+.d2 { transform: translate3d(37.5px, -6px, 0px) rotateX(26.5deg); }  /* Right N */
+.d3 { transform: translate3d(0, -6px, -37.5px) rotateZ(26.5deg); }   /* Back N */
+.d4 { transform: translate3d(-37.5px, -6px, 0px) rotateX(-26.5deg); } /* Left N */
 
 .gameclear { border-color: #f1c40f; }
 .gameclear h1 { color: #f1c40f; text-shadow: 0 0 20px #f1c40f; }
