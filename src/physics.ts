@@ -180,6 +180,18 @@ export const updatePlayer = (
             player.coyoteTimer--;
         }
 
+        let onWall = false;
+        let wallDir = 0; 
+        if (!player.isGrounded && !isGiant && !inWater && !isFlying) {
+            blocks.forEach(b => {
+                if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
+                    if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
+                    else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
+                }
+            });
+        }
+        player.isWallSliding = onWall && player.vy > 0;
+
         if (player.jumpBufferTimer > 0) {
             if (isFlying) {
                 // Flight mechanics: holding Jump moves you up
@@ -221,18 +233,6 @@ export const updatePlayer = (
         player.rollTimer--;
         if (player.rollTimer <= 0) player.isRolling = false;
     }
-
-    let onWall = false;
-    let wallDir = 0; 
-    if (!player.isGrounded && !isGiant && !inWater && !isFlying) {
-        blocks.forEach(b => {
-            if (player.y + currentHeight > b.y && player.y < b.y + b.h) {
-                if (player.x + player.width + 2 > b.x && player.x + player.width < b.x + 10) { onWall = true; wallDir = 1; }
-                else if (player.x - 2 < b.x + b.w && player.x > b.x + b.w - 10) { onWall = true; wallDir = -1; }
-            }
-        });
-    }
-    player.isWallSliding = onWall && player.vy > 0;
 
     const waterGravityReduction = inWater ? 0.3 : 1.0;
     const flightGravityReduction = isFlying ? 0.1 : 1.0;
