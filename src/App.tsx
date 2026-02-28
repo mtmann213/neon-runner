@@ -31,6 +31,17 @@ const GameCanvas: React.FC = () => {
         { x: 1200, y: 0, w: 40, h: 40, type: 'health', open: false },
         { x: 2800, y: 0, w: 40, h: 40, type: 'speed', open: false },
         { x: 4500, y: 0, w: 40, h: 40, type: 'health', open: false }
+      ],
+      platforms: [
+        { x: 600, y: 400, w: 150, h: 20 },
+        { x: 900, y: 300, w: 150, h: 20 },
+        { x: 1800, y: 350, w: 200, h: 20 },
+        { x: 2100, y: 250, w: 200, h: 20 },
+      ],
+      blocks: [
+        { x: 700, y: 250, w: 40, h: 40, hit: false },
+        { x: 1000, y: 150, w: 40, h: 40, hit: false },
+        { x: 2200, y: 100, w: 40, h: 40, hit: false },
       ]
     },
     {
@@ -46,6 +57,15 @@ const GameCanvas: React.FC = () => {
           { x: 1500, y: 0, w: 40, h: 40, type: 'speed', open: false },
           { x: 3500, y: 0, w: 40, h: 40, type: 'health', open: false },
           { x: 5500, y: 0, w: 40, h: 40, type: 'speed', open: false }
+        ],
+        platforms: [
+            { x: 800, y: 400, w: 120, h: 20 },
+            { x: 1100, y: 320, w: 120, h: 20 },
+            { x: 1400, y: 240, w: 120, h: 20 },
+        ],
+        blocks: [
+            { x: 1150, y: 180, w: 40, h: 40, hit: false },
+            { x: 1450, y: 100, w: 40, h: 40, hit: false },
         ]
       }
   ];
@@ -71,6 +91,8 @@ const GameCanvas: React.FC = () => {
     const worldWidth = level.worldWidth;
     let enemies = level.enemies.map(e => ({ ...e, y: groundY - e.h }));
     let chests = level.chests.map(c => ({ ...c, y: groundY - c.h }));
+    let platforms = level.platforms || [];
+    let blocks = (level.blocks || []).map(b => ({ ...b }));
     
     gameStateRef.current = 'playing';
     setGameState('playing');
@@ -233,10 +255,53 @@ const GameCanvas: React.FC = () => {
 
       player.vy += gravity; player.x += player.vx; player.y += player.vy;
       const currentHeight = player.isRolling ? 30 : 60;
+
+      // Reset grounded state before checks
+      let wasGrounded = player.isGrounded;
+      player.isGrounded = false;
+
+      // Ground Collision
       if (player.y + currentHeight > groundY) {
-        if (!player.isGrounded) createParticles(player.x + 20, groundY, '#7d5c34', 5, 1);
+        if (!wasGrounded) createParticles(player.x + 20, groundY, '#7d5c34', 5, 1);
         player.y = groundY - currentHeight; player.vy = 0; player.isGrounded = true;
       }
+
+      // Platform Collision (One-way)
+      platforms.forEach(plat => {
+          if (player.vy >= 0 && 
+              player.x + player.width > plat.x && player.x < plat.x + plat.w &&
+              player.y + currentHeight <= plat.y && player.y + currentHeight + player.vy >= plat.y) {
+                player.y = plat.y - currentHeight;
+                player.vy = 0;
+                player.isGrounded = true;
+          }
+      });
+
+      // Treasure Block Collision (Head bump)
+      blocks.forEach(block => {
+          // Horizontal overlap
+          if (player.x + player.width > block.x && player.x < block.x + block.w) {
+              // Hit from bottom
+              if (player.vy < 0 && player.y >= block.y + block.h && player.y + player.vy <= block.y + block.h) {
+                  player.y = block.y + block.h;
+                  player.vy = 0;
+                  if (!block.hit) {
+                      block.hit = true;
+                      scoreRef.current += 200;
+                      setScore(scoreRef.current);
+                      createParticles(block.x + 20, block.y, '#f1c40f', 10, 2);
+                      startShake(5, 2);
+                      if (audioEnabled) audioManager.playCoin();
+                  }
+              }
+              // Land on top
+              else if (player.vy >= 0 && player.y + currentHeight <= block.y && player.y + currentHeight + player.vy >= block.y) {
+                player.y = block.y - currentHeight;
+                player.vy = 0;
+                player.isGrounded = true;
+              }
+          }
+      });
 
       chests.forEach(chest => {
           if (!chest.open && checkCollision(player, chest)) {
@@ -317,6 +382,15 @@ const GameCanvas: React.FC = () => {
       chests.forEach(c => {
           ctx.fillStyle = c.open ? '#8B4513' : '#f1c40f'; ctx.fillRect(c.x, c.y, c.w, c.h);
           if (!c.open) { ctx.fillStyle = 'black'; ctx.font = 'bold 20px Arial'; ctx.fillText('?', c.x+15, c.y+25); }
+      });
+      platforms.forEach(p => {
+          ctx.fillStyle = '#95a5a6'; ctx.fillRect(p.x, p.y, p.w, p.h);
+          ctx.strokeStyle = '#bdc3c7'; ctx.strokeRect(p.x, p.y, p.w, p.h);
+      });
+      blocks.forEach(b => {
+          ctx.fillStyle = b.hit ? '#95a5a6' : '#f1c40f'; ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.strokeRect(b.x, b.y, b.w, b.h);
+          if (!b.hit) { ctx.fillStyle = 'white'; ctx.font = 'bold 30px Arial'; ctx.fillText('$', b.x+10, b.y+32); }
       });
       enemies.forEach(e => drawEnemy(ctx, e));
       drawBoy(ctx, player);
