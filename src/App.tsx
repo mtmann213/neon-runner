@@ -284,7 +284,7 @@ const GameCanvas: React.FC = () => {
       Renderer.drawBoy(ctx, player, frameCount);
       ctx.restore();
       
-      for (let i = 0; i < lives; i++) Renderer.drawHeart(ctx, 20 + i * 35, 20, 25);
+      for (let i = 0; i < livesRef.current; i++) Renderer.drawHeart(ctx, 20 + i * 35, 20, 25);
       
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(20, 60, 100, 10);
