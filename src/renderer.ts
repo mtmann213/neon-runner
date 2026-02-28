@@ -22,7 +22,7 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
     
     // Neon Glow
     ctx.shadowBlur = 15;
-    ctx.shadowColor = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#2980b9');
+    ctx.shadowColor = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
 
     if (p.invincibilityFrames % 10 < 5) {
         if (p.isRolling) {
@@ -32,7 +32,7 @@ export const drawBoy = (ctx: CanvasRenderingContext2D, p: Player, frameCount: nu
             ctx.fill();
         } else {
             // Body
-            ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#2980b9');
+            ctx.fillStyle = p.speedBoostTimer > 0 ? '#f1c40f' : (p.jumpBoostTimer > 0 ? '#2ecc71' : '#00ced1');
             ctx.fillRect(p.width*0.25, p.height*0.33, p.width*0.5, p.height*0.5);
             
             // Head
